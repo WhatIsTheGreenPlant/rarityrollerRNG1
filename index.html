@@ -2213,8 +2213,23 @@ function renderCsIndex(){
 
 // ── LIVE FEED ──
 async function pushLiveEvent(rarity){
-  const name=getLbName()||'Anonymous';
-  try{await fetch(FB+'/events.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,rarity,ts:Date.now()})});}catch(e){}
+  let name=(getLbName()||'').trim();
+  if(!name) name='Anonymous';
+  if(name.length>24) name=name.slice(0,24);
+  try{
+    const res=await fetch(FB+'/events.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,rarity,ts:Date.now()})});
+    if(!res.ok){
+      const txt=await res.text().catch(()=>'');
+      console.warn('[liveFeed] push failed',res.status,txt);
+      if(res.status===401||(txt&&txt.indexOf('Permission denied')>=0)){
+        toast('Live feed: update Firebase rules to enable');
+      }
+    } else {
+      // Refresh the feed if the index tab is showing
+      const idx=document.getElementById('tabIndex');
+      if(idx&&idx.classList.contains('active')) setTimeout(fetchLiveFeed,400);
+    }
+  }catch(e){console.warn('[liveFeed] push error',e);}
 }
 function formatLiveTime(ts){
   const d=new Date(ts);
