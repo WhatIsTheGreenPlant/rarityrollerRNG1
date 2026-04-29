@@ -768,6 +768,18 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
       </div>
       <hr class="admin-divider"/>
       <div class="admin-row">
+        <label class="admin-lbl">Set Rebirths</label>
+        <input class="admin-input" id="adminRebirths" type="number" min="0" placeholder="e.g. 5"/>
+        <button class="admin-apply-btn" onclick="adminSetRebirths()">Set</button>
+      </div>
+      <hr class="admin-divider"/>
+      <div class="admin-row">
+        <label class="admin-lbl">Set Rebirth Tokens</label>
+        <input class="admin-input" id="adminRTokens" type="number" min="0" placeholder="e.g. 100"/>
+        <button class="admin-apply-btn" onclick="adminSetRTokens()">Set</button>
+      </div>
+      <hr class="admin-divider"/>
+      <div class="admin-row">
         <label class="admin-lbl">Force Next Roll</label>
         <select class="admin-select" id="adminRarity">
           <option value="">— Normal —</option>
@@ -909,6 +921,8 @@ const REBIRTH_SHOP_ITEMS = [
   {id:'omegaAutoRoll', name:'Omega roller',     icon:'&#x1F300;', cost:15000, desc:'Rolls 50 times a second.',                group:'autoRoll'},
   {id:'coinRain',      name:'Gold Shower',      icon:'&#x1F327;&#xFE0F;', cost:2, desc:'+25% on all coin drops, every roll, forever.'},
   {id:'fortunesSon',   name:'Common Blocker',   icon:'&#x1F9E7;', cost:4,     desc:'Bans Common and Uncommon from ever being rolled.'},
+  {id:'rareBlocker',   name:'Rare+Epic Blocker',icon:'&#x1F6AB;', cost:50,    desc:'Bans Rare and Epic from ever being rolled. Requires Common Blocker.'},
+  {id:'legendBlocker', name:'Legendary Blocker',icon:'&#x26D4;',  cost:300,   desc:'Bans Legendary from ever being rolled. Requires Rare+Epic Blocker.'},
   {id:'autoRebirth',   name:'Auto Ascend',      icon:'&#x1F504;', cost:15,    desc:'Automatically rebirths when you qualify. Toggle ON/OFF.'},
   {id:'fastAutoRebirth',name:'Fast Auto Ascend',icon:'&#x26A1;&#x1F504;', cost:5000, desc:'Rebirths instantly the millisecond you qualify.'},
   {id:'unlockBrewing', name:'Unlock Brewing',   icon:'&#x2697;&#xFE0F;', cost:10000, desc:'Unlocks the Potion Brewing tab. Brew powerful potions from rare materials.'},
@@ -983,24 +997,29 @@ function getFlatCoins(){
 function getWeights(){
   let w=[...BASE_W];
   const luck=getTotalLuck();
-  const fortunesSon=!!(state.rebirthShop&&state.rebirthShop.fortunesSon);
+  const rs=state.rebirthShop||{};
+  const fortunesSon=!!rs.fortunesSon;
+  const rareBlocker=!!rs.rareBlocker;
+  const legendBlocker=!!rs.legendBlocker;
   if(fortunesSon){ w[0]=0; w[1]=0; }
+  if(rareBlocker){ w[2]=0; w[3]=0; }
+  if(legendBlocker){ w[4]=0; }
 
   if(luck>0){
     // Sigmoid fraction: meaningful at low luck, powerful at high luck, never fully saturates
     const frac = Math.min(luck / (luck + 150), 0.93);
 
-    // Pull weight OUT of low tiers
+    // Pull weight OUT of low tiers (skip blocked ones)
     const p0 = fortunesSon ? 0 : frac * (w[0] - 0.01);
     const p1 = fortunesSon ? 0 : frac * (w[1] - 0.01);
-    const p2 = frac * (w[2] - 0.01);
-    const p3 = frac * (w[3] - 0.01) * 0.5; // only half from Epic
+    const p2 = rareBlocker ? 0 : frac * (w[2] - 0.01);
+    const p3 = rareBlocker ? 0 : frac * (w[3] - 0.01) * 0.5; // only half from Epic
     w[0] -= p0; w[1] -= p1; w[2] -= p2; w[3] -= p3;
     const pulled = p0 + p1 + p2 + p3;
 
-    // Push pulled weight into rarer tiers
-    w[4]  += pulled * 0.28;
-    w[5]  += pulled * 0.24;
+    // Push pulled weight into rarer tiers (skip Legendary if blocked)
+    if(!legendBlocker) w[4] += pulled * 0.28;
+    w[5]  += pulled * (legendBlocker ? 0.40 : 0.24);
     w[6]  += pulled * 0.19;
     w[7]  += pulled * 0.12;
     w[8]  += pulled * 0.065;
@@ -1010,6 +1029,11 @@ function getWeights(){
     w[12] += pulled * 0.003;  // ???
     // Void gets no luck boost — it's always 1-in-a-million max
   }
+
+  // Re-enforce blocker zeros after luck pushes
+  if(fortunesSon){ w[0]=0; w[1]=0; }
+  if(rareBlocker){ w[2]=0; w[3]=0; }
+  if(legendBlocker){ w[4]=0; }
 
   const total = w.reduce((a,b)=>a+b,0);
   w[11] = Math.min(w[11], total * 0.00005);   // Transcendent cap 0.005%
@@ -1095,6 +1119,8 @@ function doRebirth(){
 function buyRebirthItem(id){
   const item=REBIRTH_SHOP_ITEMS.find(i=>i.id===id);
   if(!item||state.rebirthShop[id]){ toast(state.rebirthShop[id]?'Already have it!':'?'); return; }
+  if(id==='rareBlocker' && !state.rebirthShop.fortunesSon){ toast('Need Common Blocker first.'); return; }
+  if(id==='legendBlocker' && !state.rebirthShop.rareBlocker){ toast('Need Rare+Epic Blocker first.'); return; }
   if((state.rebirthTokens||0)<item.cost){ toast('Not enough tokens.'); return; }
   state.rebirthTokens-=item.cost; state.rebirthShop[id]=true;
   save(); updateAutoRoll(); renderAll();
@@ -1415,11 +1441,14 @@ function renderAll(){
 function renderOdds(){
   const w=getWeights();
   const total=w.reduce((a,b)=>a+b,0);
-  const maxPct=w[0]/total*100;
+  // Use the largest non-zero weight as the bar reference so blockers (which zero out
+  // tiers) don't make every bar render the same length.
+  const maxW=Math.max(...w);
+  const maxPct=maxW>0?maxW/total*100:0;
   document.getElementById('oddsBar').innerHTML=RARITIES.map((r,i)=>{
     const pct=w[i]/total*100;
     const barW=maxPct>0?Math.min(pct/maxPct*100,100):0;
-    const pctStr=pct<0.0001?pct.toFixed(5)+'%':pct<0.001?pct.toFixed(4)+'%':pct<0.01?pct.toFixed(3)+'%':pct<0.1?pct.toFixed(2)+'%':pct.toFixed(1)+'%';
+    const pctStr=w[i]<=0?'BLOCKED':pct<0.0001?pct.toFixed(5)+'%':pct<0.001?pct.toFixed(4)+'%':pct<0.01?pct.toFixed(3)+'%':pct<0.1?pct.toFixed(2)+'%':pct.toFixed(1)+'%';
     return '<div class="odds-row"><span class="odds-name c-'+safeClass(r)+'">'+r+'</span><div class="odds-track"><div class="odds-fill" style="width:'+barW+'%;background:'+COLORS[r]+';"></div></div><span class="odds-pct">'+pctStr+'</span></div>';
   }).join('');
 }
@@ -1568,6 +1597,21 @@ function adminAddLuck(){
   if(v<=0) return;
   adminLuckBonus+=v;renderAll();toast('[Admin] +'+v+'% luck.');
   document.getElementById('adminLuck').value='';
+}
+function adminSetRebirths(){
+  const v=parseInt(document.getElementById('adminRebirths').value);
+  if(isNaN(v)||v<0) return;
+  state.rebirths=v;
+  state.rebirthLuckBonus=v*8; state.rebirthCoinBonus=v*10;
+  save();renderAll();toast('[Admin] Rebirths set to '+v+'.');
+  document.getElementById('adminRebirths').value='';
+}
+function adminSetRTokens(){
+  const v=parseInt(document.getElementById('adminRTokens').value);
+  if(isNaN(v)||v<0) return;
+  state.rebirthTokens=v;
+  save();renderAll();toast('[Admin] Rebirth Tokens set to '+v+'.');
+  document.getElementById('adminRTokens').value='';
 }
 function adminForceRoll(){
   const v=document.getElementById('adminRarity').value;
@@ -2155,6 +2199,13 @@ async function pushLiveEvent(rarity){
   const name=getLbName()||'Anonymous';
   try{await fetch(FB+'/events.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,rarity,ts:Date.now()})});}catch(e){}
 }
+function formatLiveTime(ts){
+  const d=new Date(ts);
+  const pad=n=>n<10?'0'+n:''+n;
+  const date=pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+  const time=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  return date+' '+time;
+}
 async function fetchLiveFeed(){
   const list=document.getElementById('liveFeedList');if(!list)return;
   try{
@@ -2166,14 +2217,18 @@ async function fetchLiveFeed(){
     const now=Date.now();
     list.innerHTML=events.map(ev=>{
       const age=now-ev.ts;
-      const t=age<60000?Math.floor(age/1000)+'s ago':age<3600000?Math.floor(age/60000)+'m ago':Math.floor(age/3600000)+'h ago';
+      const rel=age<60000?Math.floor(age/1000)+'s ago':age<3600000?Math.floor(age/60000)+'m ago':age<86400000?Math.floor(age/3600000)+'h ago':Math.floor(age/86400000)+'d ago';
+      const exact=formatLiveTime(ev.ts);
       const isTrans=ev.rarity==='Transcendent';
-      const color=isTrans?'#ffd700':'#ffffff';
-      const stroke=isTrans?'':'-webkit-text-stroke:.7px #fff;';
-      return '<div class="live-entry '+(isTrans?'live-trans':'live-unk')+'"><span style="font-size:1rem">'+(isTrans?'&#x2747;':'&#x2753;')+'</span>'
+      const isVoid=ev.rarity==='Void';
+      const icon=isTrans?'&#x2747;':isVoid?'&#x25FE;':'&#x2753;';
+      const color=isTrans?'#ffd700':isVoid?'#7c00e0':'#ffffff';
+      const stroke=(!isTrans&&!isVoid)?'-webkit-text-stroke:.7px #fff;':'';
+      const cls=isTrans?'live-trans':isVoid?'live-void':'live-unk';
+      return '<div class="live-entry '+cls+'"><span style="font-size:1rem">'+icon+'</span>'
         +'<span class="live-who">'+esc(ev.name||'Anonymous')+'</span>'
         +'<span class="live-what" style="color:'+color+';'+stroke+'">'+esc(ev.rarity)+'</span>'
-        +'<span class="live-when">'+t+'</span></div>';
+        +'<span class="live-when" title="'+exact+'" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;"><span>'+rel+'</span><span style="font-size:.55rem;opacity:.7;">'+exact+'</span></span></div>';
     }).join('');
   }catch(e){if(list)list.innerHTML='<div style="color:var(--muted);font-size:.72rem;text-align:center;padding:12px;font-style:italic;">Could not load live feed.</div>';}
 }
@@ -2190,9 +2245,9 @@ const BREW_RECIPES={
   },
   void:{
     name:'Void Potion',icon:'\u25FE',
-    requirements:{rebirthTokens:20000,unknowns:3,transcendents:5,coins:10000000000,achievements:25,rolls:100000,celestialBrews:100},
-    baseBrew:12*60*60*1000, // 12 hr base; minigame: great→6hr, ok→9hr, miss→12hr
-    minGreat:6*60*60*1000, minOk:9*60*60*1000,
+    requirements:{rebirthTokens:75000,unknowns:7,transcendents:15,coins:100000000000,achievements:26,rolls:500000,celestialBrews:250},
+    baseBrew:24*60*60*1000, // 24 hr base; minigame: great→12hr, ok→18hr, miss→24hr
+    minGreat:12*60*60*1000, minOk:18*60*60*1000,
     reward:'ltVoidBrews',
     grantsRoll:'Void',
   }
