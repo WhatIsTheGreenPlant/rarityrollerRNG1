@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rarity Roller</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --common:#9a9a9a;--uncommon:#4caf50;--rare:#2196f3;--epic:#ab47bc;
+  --legendary:#ff9800;--mythical:#f44336;--exotic:#AAFF00;--uber:#32cd32;
+  --secret:#00e5ff;--moai:#ffffff;--transcendent:#ffd700;
+  --gold:#f0c040;--rebirth:#e040fb;
+  --bg:#080810;--panel:#0f0f1a;--panel2:#13131f;
+  --border:#1e1e30;--border2:#2a2a3e;--text:#d8d8f0;--muted:#4a4a68;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(1px 1px at 15% 25%,rgba(255,255,255,.35) 0%,transparent 100%),radial-gradient(1px 1px at 75% 8%,rgba(255,255,255,.25) 0%,transparent 100%),radial-gradient(1px 1px at 45% 65%,rgba(255,255,255,.2) 0%,transparent 100%),radial-gradient(1px 1px at 8% 85%,rgba(255,255,255,.3) 0%,transparent 100%),radial-gradient(1px 1px at 88% 55%,rgba(255,255,255,.2) 0%,transparent 100%),radial-gradient(2px 2px at 32% 48%,rgba(255,255,255,.12) 0%,transparent 100%),radial-gradient(1px 1px at 62% 18%,rgba(255,255,255,.22) 0%,transparent 100%),radial-gradient(1px 1px at 55% 90%,rgba(255,255,255,.18) 0%,transparent 100%);pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;width:min(1020px,98vw);padding:16px 12px 60px;display:flex;flex-direction:column;gap:16px;}
+h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text-align:center;background:linear-gradient(135deg,#b8922e,#f0d060,#b8922e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 18px rgba(200,160,60,.45));letter-spacing:.12em;}
+.rebirth-crown{font-family:'Cinzel',serif;font-size:.72rem;text-align:center;letter-spacing:.18em;margin-top:-6px;display:none;}
+.rebirth-crown.show{display:block;}
+/* tabs */
+.tab-bar{display:flex;gap:0;border-radius:10px;overflow:hidden;border:1px solid var(--border2);}
+.tab-btn{flex:1;background:var(--panel2);border:none;color:var(--muted);font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.15em;padding:11px 8px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{background:var(--panel);color:var(--gold);border-bottom:2px solid var(--gold);}
+.tab-content{display:none;}
+.tab-content.active{display:flex;flex-direction:column;gap:16px;}
+/* hud */
+.hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.hud-chip{background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:9px 16px;display:flex;align-items:center;gap:7px;font-family:'Cinzel',serif;}
+.hud-chip .icon{font-size:1rem;}
+.hud-chip .val{color:var(--gold);font-weight:600;font-size:.88rem;}
+.hud-chip .lbl{color:var(--muted);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;}
+.hud-chip.rebirth-chip .val{color:var(--rebirth);}
+.hud-chip.token-chip .val{color:#e040fb;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.cols{grid-template-columns:1fr;}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;}
+.panel-title{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:9px;}
+.result-display{text-align:center;padding:8px 0 2px;}
+.result-rarity{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.4rem,5vw,2.1rem);color:#333;letter-spacing:.04em;min-height:2.3rem;}
+.result-rarity.pop{animation:popIn .35s cubic-bezier(.175,.885,.32,1.275) forwards;}
+@keyframes popIn{0%{transform:scale(.55);opacity:0}100%{transform:scale(1);opacity:1}}
+.result-sub{font-size:.76rem;color:var(--muted);margin-top:5px;min-height:1em;font-style:italic;}
+.odds-bar{display:flex;flex-direction:column;gap:4px;}
+.odds-row{display:flex;align-items:center;gap:7px;}
+.odds-name{width:88px;font-family:'Cinzel',serif;font-size:.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.odds-track{flex:1;height:4px;background:#1a1a28;border-radius:2px;overflow:hidden;}
+.odds-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+.odds-pct{width:54px;text-align:right;color:var(--muted);font-size:.6rem;}
+.roll-btn{background:linear-gradient(135deg,#1c1c30,#181828);border:1px solid #b8922e;color:#d4a830;font-family:'Cinzel Decorative',cursive;font-size:.92rem;letter-spacing:.18em;padding:15px;border-radius:10px;cursor:pointer;width:100%;transition:all .2s;position:relative;overflow:hidden;}
+.roll-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,160,60,.12),transparent);opacity:0;transition:opacity .2s;}
+.roll-btn:hover::after{opacity:1;}
+.roll-btn:hover{box-shadow:0 0 22px rgba(200,160,60,.28);transform:translateY(-1px);}
+.roll-btn:active{transform:translateY(1px);}
+.roll-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.auto-badge{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.15em;text-align:center;color:#5a9a5a;padding:4px 8px;border-radius:5px;background:rgba(50,205,50,.06);border:1px solid rgba(50,205,50,.15);display:none;}
+.auto-badge.show{display:block;}
+.potion-grid{display:flex;flex-direction:column;gap:6px;}
+.potion-row{display:flex;gap:7px;align-items:center;}
+.pot-btn{flex:1;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;padding:8px 6px;border-radius:7px;cursor:pointer;transition:all .2s;border:1px solid;display:flex;align-items:center;justify-content:center;gap:5px;}
+.pot-btn.small{background:linear-gradient(135deg,#1a0f28,#120c1e);border-color:#6a3fa0;color:#b07ae0;}
+.pot-btn.medium{background:linear-gradient(135deg,#0f2028,#0a1820);border-color:#1a7090;color:#50c0e0;}
+.pot-btn.large{background:linear-gradient(135deg,#281808,#1a0e08);border-color:#905020;color:#e08040;}
+.pot-btn:hover{transform:translateY(-1px);filter:brightness(1.2);}
+.pot-btn:disabled{opacity:.38;cursor:not-allowed;transform:none;}
+.pot-count{font-family:'Cinzel',serif;font-size:.78rem;padding:8px 10px;border-radius:6px;white-space:nowrap;min-width:32px;text-align:center;}
+.pot-count.small{background:#2a1040;border:1px solid #4a2070;color:#c090f0;}
+.pot-count.medium{background:#0a1830;border:1px solid #1a5070;color:#60b0d0;}
+.pot-count.large{background:#281808;border:1px solid #703010;color:#d07030;}
+.potion-active-badge{background:linear-gradient(135deg,#1a0830,#100520);border:1px solid #7030a0;border-radius:7px;padding:7px 10px;font-size:.68rem;color:#c080ff;text-align:center;font-style:italic;display:none;}
+.potion-active-badge.show{display:block;animation:pulseGlow .8s ease infinite alternate;}
+@keyframes pulseGlow{from{box-shadow:0 0 6px rgba(180,80,255,.2)}to{box-shadow:0 0 18px rgba(180,80,255,.5)}}
+.double-coins-badge{background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);border-radius:7px;padding:6px 10px;font-size:.68rem;color:var(--gold);text-align:center;display:none;}
+.double-coins-badge.show{display:block;}
+.dc-row{display:flex;gap:7px;align-items:center;margin-top:2px;}
+.dc-btn{flex:1;background:linear-gradient(135deg,#201808,#140e06);border:1px solid #907020;color:#d4a830;font-family:'Cinzel',serif;font-size:.65rem;padding:8px 6px;border-radius:7px;cursor:pointer;transition:all .2s;}
+.dc-btn:hover{filter:brightness(1.2);transform:translateY(-1px);}
+.dc-btn:disabled{opacity:.38;cursor:not-allowed;transform:none;}
+.shop-scroll{display:flex;flex-direction:column;gap:7px;max-height:380px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2a2a3a transparent;padding-right:2px;}
+.shop-item{background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;transition:border-color .2s;}
+.shop-item:hover{border-color:#3a3a56;}
+.shop-item-icon{font-size:1.3rem;min-width:26px;text-align:center;}
+.shop-item-info{flex:1;min-width:0;}
+.shop-item-name{font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.05em;margin-bottom:1px;}
+.shop-item-desc{font-size:.68rem;color:var(--muted);font-style:italic;}
+.shop-item-level{font-size:.6rem;color:#5a5a80;margin-top:1px;}
+.buy-btn{background:linear-gradient(135deg,#1a1808,#12100a);border:1px solid #806020;color:#c0a030;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.08em;padding:7px 10px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;min-width:64px;text-align:center;flex-shrink:0;}
+.buy-btn:hover{box-shadow:0 0 10px rgba(180,140,30,.3);border-color:#b08030;}
+.buy-btn:disabled{opacity:.38;cursor:not-allowed;}
+.buy-btn.potion-buy{border-color:#6a3fa0;color:#b07ae0;background:linear-gradient(135deg,#1a0f28,#120c1e);}
+.buy-btn.potion-buy:hover{box-shadow:0 0 10px rgba(160,80,220,.3);border-color:#9060d0;}
+.buy-btn.med-buy{border-color:#1a7090;color:#50c0e0;background:linear-gradient(135deg,#0f2028,#0a1820);}
+.buy-btn.lrg-buy{border-color:#905020;color:#e08040;background:linear-gradient(135deg,#281808,#1a0e08);}
+.buy-btn.dc-buy{border-color:#907020;color:#d4a830;background:linear-gradient(135deg,#201808,#140e06);}
+.buy-btn.maxed{border-color:#2a2a3a;color:#3a3a58;background:#0d0d18;cursor:default;}
+.rebirth-panel{background:linear-gradient(135deg,#0e0820,#110828);border:1px solid #4a0878;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;}
+.rebirth-panel-title{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:#7040a0;border-bottom:1px solid #2a1040;padding-bottom:9px;}
+.rebirth-desc{font-size:.75rem;color:#8050b0;font-style:italic;line-height:1.5;}
+.rebirth-req{font-size:.7rem;color:var(--muted);}
+.rebirth-req span{color:var(--rebirth);}
+.rebirth-perks{display:flex;flex-direction:column;gap:5px;}
+.rebirth-perk{display:flex;justify-content:space-between;align-items:center;font-size:.68rem;padding:5px 8px;background:rgba(180,60,240,.04);border:1px solid rgba(180,60,240,.1);border-radius:6px;}
+.rebirth-perk-name{color:#9060c0;font-family:'Cinzel',serif;font-size:.62rem;}
+.rebirth-perk-val{color:#d090ff;}
+.rebirth-btn{background:linear-gradient(135deg,#2a0848,#1a0535);border:1px solid #8020c0;color:#c060f0;font-family:'Cinzel Decorative',cursive;font-size:.78rem;letter-spacing:.14em;padding:13px;border-radius:9px;cursor:pointer;width:100%;transition:all .2s;position:relative;overflow:hidden;}
+.rebirth-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(180,60,240,.15),transparent);opacity:0;transition:.2s;}
+.rebirth-btn:hover::after{opacity:1;}
+.rebirth-btn:hover{box-shadow:0 0 26px rgba(180,60,240,.4);transform:translateY(-1px);}
+.rebirth-btn:disabled{opacity:.32;cursor:not-allowed;transform:none;}
+.rebirth-shop-panel{background:linear-gradient(135deg,#100a20,#0e0818);border:1px solid #3a0868;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;}
+.rebirth-shop-title{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:#6030a0;border-bottom:1px solid #200840;padding-bottom:9px;}
+.rs-item{background:rgba(180,60,240,.04);border:1px solid rgba(180,60,240,.1);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:border-color .2s;}
+.rs-item:hover{border-color:rgba(180,60,240,.25);}
+.rs-item.owned{opacity:.55;border-color:rgba(180,60,240,.06);}
+.rs-item-icon{font-size:1.2rem;min-width:24px;text-align:center;}
+.rs-item-info{flex:1;min-width:0;}
+.rs-item-name{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.05em;color:#c080f0;margin-bottom:1px;}
+.rs-item-desc{font-size:.65rem;color:#7050a0;font-style:italic;}
+.rs-buy-btn{background:linear-gradient(135deg,#2a0848,#1a0535);border:1px solid #8020c0;color:#c060f0;font-family:'Cinzel',serif;font-size:.62rem;padding:7px 10px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;}
+.rs-buy-btn:hover{box-shadow:0 0 10px rgba(180,60,240,.3);}
+.rs-buy-btn:disabled{opacity:.35;cursor:not-allowed;}
+.rs-owned-tag{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;color:#4a3060;white-space:nowrap;}
+.rs-toggle-btn{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;cursor:pointer;border:1px solid #3a2060;background:#1a0830;color:#5a3080;transition:all .2s;white-space:nowrap;}
+.rs-toggle-btn.on{border-color:#4a9a4a;background:#0d1e0d;color:#5a9a5a;box-shadow:0 0 8px rgba(80,180,80,.2);}
+.rs-toggle-btn:hover{filter:brightness(1.3);}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.stat-box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.stat-box .s-lbl{font-size:.58rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+.stat-box .s-val{font-family:'Cinzel Decorative',cursive;font-size:.88rem;}
+.history-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2a2a3a transparent;}
+.history-item{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;padding:4px 7px;border-radius:5px;background:rgba(255,255,255,.02);animation:slideIn .2s ease forwards;opacity:0;transform:translateX(-7px);}
+@keyframes slideIn{to{opacity:1;transform:translateX(0)}}
+.history-num{color:#333;font-size:.65rem;}
+.history-coins{color:var(--gold);font-size:.65rem;}
+/* leaderboard tab */
+.lb-tab-bar{display:flex;gap:6px;margin-bottom:4px;}
+.lb-sub-btn{flex:1;background:var(--panel2);border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.12em;padding:9px 6px;border-radius:8px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.lb-sub-btn.active{background:var(--panel);color:var(--gold);border-color:#5a4010;}
+.lb-sub-btn:hover{color:var(--text);}
+.lb-board{display:none;}
+.lb-board.active{display:flex;flex-direction:column;gap:6px;}
+.lb-header-row,.lb-entry{display:grid;align-items:center;padding:7px 10px;border-radius:7px;font-size:.74rem;gap:8px;}
+.lb-header-row{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;background:transparent;}
+.lb-entry{background:rgba(255,255,255,.025);}
+.lb-entry.is-me{background:rgba(200,160,60,.07);border:1px solid rgba(200,160,60,.2);}
+.lb-rank-cell{color:var(--muted);font-family:'Cinzel',serif;font-size:.7rem;text-align:center;}
+.lb-rank-cell.gold{color:#f0c040;}
+.lb-rank-cell.silver{color:#c0c0c0;}
+.lb-rank-cell.bronze{color:#cd7f32;}
+.lb-name-cell{font-family:'Cinzel',serif;font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-val-cell{text-align:right;color:var(--text);}
+.lb-sub-cell{text-align:right;color:var(--muted);font-size:.65rem;}
+.lb-status-row{display:flex;justify-content:space-between;align-items:center;font-size:.6rem;color:var(--muted);font-family:'Cinzel',serif;letter-spacing:.08em;}
+.lb-status-dot{width:6px;height:6px;border-radius:50%;background:#3a4a3a;display:inline-block;margin-right:5px;vertical-align:middle;}
+.lb-status-dot.live{background:#4a9a4a;box-shadow:0 0 6px #4a9a4a;}
+.lb-submit-row{display:flex;gap:8px;align-items:center;}
+.lb-name-display{flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cinzel',serif;font-size:.78rem;color:var(--text);}
+.lb-push-btn{background:linear-gradient(135deg,#0d280d,#0a1e0a);border:1px solid #2a6a2a;color:#60b060;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:8px 14px;border-radius:7px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.lb-push-btn:hover{box-shadow:0 0 12px rgba(80,180,80,.3);}
+.lb-push-btn:disabled{opacity:.38;cursor:not-allowed;}
+.lb-set-name-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:.6rem;padding:9px 10px;border-radius:7px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.lb-set-name-btn:hover{border-color:#5a5a7a;color:var(--text);}
+.lb-empty{color:#2a3a2a;font-size:.72rem;text-align:center;padding:20px;font-style:italic;}
+/* name-set modal */
+#nameModal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10001;display:none;align-items:center;justify-content:center;}
+#nameModal.open{display:flex;}
+#nameModalBox{background:#0e0e1c;border:1px solid #3a4a1a;border-radius:14px;padding:28px;width:min(380px,90vw);display:flex;flex-direction:column;gap:14px;box-shadow:0 0 40px rgba(80,180,80,.15);}
+#nameModalBox h2{font-family:'Cinzel Decorative',cursive;font-size:.95rem;color:#60b060;text-align:center;letter-spacing:.12em;}
+#nameModalBox p{font-size:.75rem;color:var(--muted);text-align:center;line-height:1.5;}
+#nameInput{background:#13131f;border:1px solid #2a4a2a;border-radius:7px;color:var(--text);font-family:'Cinzel',serif;font-size:.85rem;padding:10px 12px;outline:none;transition:border-color .2s;}
+#nameInput:focus{border-color:#4a9a4a;}
+#nameConfirmBtn{background:linear-gradient(135deg,#0d280d,#0a1e0a);border:1px solid #2a6a2a;color:#60b060;font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.15em;padding:11px;border-radius:8px;cursor:pointer;transition:all .2s;}
+#nameConfirmBtn:hover{box-shadow:0 0 14px rgba(80,180,80,.3);}
+#nameCancelBtn{background:transparent;border:1px solid var(--border);color:#3a3a58;font-family:'Cinzel',serif;font-size:.62rem;padding:8px;border-radius:7px;cursor:pointer;}
+/* toast */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(18px);background:#1a1a2e;border:1px solid #3a3a56;color:var(--text);font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.1em;padding:9px 20px;border-radius:28px;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#rebirthFlash{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(180,60,240,.6) 0%,rgba(80,0,120,.3) 50%,transparent 100%);pointer-events:none;z-index:500;opacity:0;}
+#rebirthFlash.flash{animation:rebirthAnim 1.2s ease forwards;}
+@keyframes rebirthAnim{0%{opacity:0}15%{opacity:1}60%{opacity:.6}100%{opacity:0}}
+.reset-btn{background:transparent;border:1px solid var(--border);color:#3a3a58;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.18em;padding:8px;border-radius:7px;cursor:pointer;width:100%;text-transform:uppercase;transition:all .2s;}
+.reset-btn:hover{border-color:#f44336;color:#f44336;}
+/* admin */
+#adminBtn{position:fixed;bottom:10px;left:10px;background:transparent;border:1px solid #1a1a2a;color:#1e1e30;font-size:.5rem;padding:4px 7px;border-radius:5px;cursor:pointer;z-index:9999;font-family:'Cinzel',serif;transition:all .3s;}
+#adminBtn:hover{border-color:#3a3a5a;color:#4a4a68;}
+#adminOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:none;align-items:center;justify-content:center;}
+#adminOverlay.open{display:flex;}
+#adminModal{background:#0e0e1c;border:1px solid #3a1060;border-radius:14px;padding:28px;width:min(420px,90vw);display:flex;flex-direction:column;gap:14px;box-shadow:0 0 40px rgba(180,60,240,.2);}
+#adminModal h2{font-family:'Cinzel Decorative',cursive;font-size:1rem;color:#c060f0;text-align:center;letter-spacing:.12em;}
+.admin-row{display:flex;flex-direction:column;gap:5px;}
+.admin-lbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#7040a0;}
+.admin-input{background:#13131f;border:1px solid #3a2060;border-radius:7px;color:var(--text);font-family:'Cinzel',serif;font-size:.82rem;padding:9px 12px;width:100%;outline:none;transition:border-color .2s;}
+.admin-input:focus{border-color:#8040c0;}
+.admin-select{background:#13131f;border:1px solid #3a2060;border-radius:7px;color:var(--text);font-family:'Cinzel',serif;font-size:.82rem;padding:9px 12px;width:100%;outline:none;cursor:pointer;}
+.admin-select option{background:#13131f;}
+.admin-apply-btn{background:linear-gradient(135deg,#2a0848,#1a0535);border:1px solid #8020c0;color:#c060f0;font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.15em;padding:10px;border-radius:8px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.admin-apply-btn:hover{box-shadow:0 0 16px rgba(180,60,240,.4);}
+.admin-close{background:transparent;border:1px solid #2a1040;color:#5a3070;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.15em;padding:8px;border-radius:7px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.admin-close:hover{border-color:#f44336;color:#f44336;}
+.admin-divider{border:none;border-top:1px solid #1e1030;}
+/* rarity colors */
+.c-Common{color:var(--common);}.c-Uncommon{color:var(--uncommon);}.c-Rare{color:var(--rare);}
+.c-Epic{color:var(--epic);}.c-Legendary{color:var(--legendary);}.c-Mythical{color:var(--mythical);}
+.c-Exotic{color:var(--exotic);}.c-Uber{color:var(--uber);}.c-Secret{color:var(--secret);}
+.c-Moai{color:var(--moai);}.c-Transcendent{color:var(--transcendent);}
+.glow-Common{text-shadow:0 0 14px var(--common);}
+.glow-Uncommon{text-shadow:0 0 14px var(--uncommon);}
+.glow-Rare{text-shadow:0 0 18px var(--rare),0 0 38px rgba(33,150,243,.3);}
+.glow-Epic{text-shadow:0 0 18px var(--epic),0 0 38px rgba(171,71,188,.3);}
+.glow-Legendary{text-shadow:0 0 20px var(--legendary),0 0 48px rgba(255,152,0,.35);animation:shimmer 1.4s ease infinite;}
+.glow-Mythical{text-shadow:0 0 26px var(--mythical),0 0 55px rgba(244,67,54,.4);animation:shimmer .7s ease infinite;}
+.glow-Exotic{text-shadow:0 0 28px var(--exotic),0 0 65px rgba(170,255,0,.5);animation:shimmer .5s ease infinite;}
+.glow-Uber{text-shadow:0 0 32px var(--uber),0 0 75px rgba(50,205,50,.6);animation:shimmer .35s ease infinite;}
+.glow-Secret{text-shadow:0 0 35px var(--secret),0 0 80px rgba(0,229,255,.6),0 0 120px rgba(0,229,255,.3);animation:shimmer .25s ease infinite;}
+.glow-Moai{animation:rainbowShift .8s linear infinite;}
+.glow-Transcendent{animation:transcendShift .6s linear infinite;}
+@keyframes shimmer{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes rainbowShift{0%{color:#fff;text-shadow:0 0 40px #f00,0 0 90px rgba(255,0,0,.6)}14%{color:#fff;text-shadow:0 0 40px #ff7f00}28%{color:#fff;text-shadow:0 0 40px #ff0}42%{color:#fff;text-shadow:0 0 40px #0f0}57%{color:#fff;text-shadow:0 0 40px #0ff}71%{color:#fff;text-shadow:0 0 40px #00f}85%{color:#fff;text-shadow:0 0 40px #8b00ff}100%{color:#fff;text-shadow:0 0 40px #f00}}
+@keyframes transcendShift{0%{color:#ffd700;text-shadow:0 0 50px #ffd700,0 0 100px rgba(255,215,0,.8)}25%{color:#fffacd;text-shadow:0 0 50px #fff,0 0 120px rgba(255,255,255,.9)}50%{color:#ffd700;text-shadow:0 0 60px #ffaa00,0 0 120px rgba(255,170,0,.8)}75%{color:#fffde7;text-shadow:0 0 50px #ffd700,0 0 100px rgba(255,215,0,.9)}100%{color:#ffd700;text-shadow:0 0 50px #ffd700,0 0 100px rgba(255,215,0,.8)}}
+/* ??? rarity */
+.c-Unknown{color:#000;-webkit-text-stroke:1.5px #fff;}
+@keyframes crackShift{
+  0%  {color:#000;-webkit-text-stroke:2px #fff;text-shadow:0 0 10px #fff,0 0 25px #fff,2px 0 0 #fff,-2px 0 0 #fff,0 0 50px rgba(255,255,255,.8);clip-path:none;}
+  20% {color:#000;-webkit-text-stroke:2px #fff;text-shadow:3px 0 0 #fff,-3px 0 0 #fff,0 0 30px #fff,0 0 60px rgba(255,255,255,.9);transform:skewX(1deg);}
+  21% {transform:skewX(-1.5deg);}
+  22% {transform:skewX(0);}
+  45% {color:#000;-webkit-text-stroke:1.5px rgba(255,255,255,.8);text-shadow:0 0 8px #fff,0 0 20px rgba(255,255,255,.6),-4px 2px 0 rgba(255,255,255,.4),4px -2px 0 rgba(255,255,255,.4);}
+  70% {color:#050505;-webkit-text-stroke:2px #fff;text-shadow:0 0 15px #fff,0 0 40px rgba(255,255,255,.9),0 2px 0 rgba(255,255,255,.3),0 -2px 0 rgba(255,255,255,.3);}
+  90% {transform:skewX(.5deg);}
+  91% {transform:skewX(-.5deg);}
+  100%{color:#000;-webkit-text-stroke:2px #fff;text-shadow:0 0 10px #fff,0 0 25px #fff,2px 0 0 #fff,-2px 0 0 #fff,0 0 50px rgba(255,255,255,.8);}
+}
+.glow-Unknown{color:#000;-webkit-text-stroke:2px #fff;animation:crackShift 1.8s ease-in-out infinite;}
+.particle{position:fixed;pointer-events:none;border-radius:50%;animation:burst .75s ease-out forwards;}
+@keyframes burst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+
+/* ── THEME BUTTON ── */
+#themeBtn{position:fixed;bottom:10px;right:10px;background:linear-gradient(135deg,#1a1040,#120c30);border:1px solid #4a2080;color:#a060e0;font-size:1rem;width:36px;height:36px;border-radius:50%;cursor:pointer;z-index:9999;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 0 12px rgba(160,80,220,.2);}
+#themeBtn:hover{box-shadow:0 0 20px rgba(160,80,220,.5);border-color:#8040c0;transform:scale(1.1);}
+
+/* ── THEME MODAL ── */
+#themeOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;display:none;align-items:flex-end;justify-content:flex-end;padding:0;}
+#themeOverlay.open{display:flex;}
+#themeModal{background:#111120;border:1px solid #2a2a40;border-radius:16px 0 0 16px;width:min(300px,90vw);height:100vh;overflow-y:auto;padding:24px 20px 40px;display:flex;flex-direction:column;gap:18px;box-shadow:-8px 0 40px rgba(0,0,0,.6);}
+#themeModal h2{font-family:'Cinzel Decorative',cursive;font-size:.95rem;color:var(--text);letter-spacing:.1em;}
+.theme-section-title{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.theme-section-sub{font-size:.7rem;color:#3a3a55;margin-bottom:8px;}
+/* mode toggle */
+.theme-mode-row{display:flex;flex-direction:column;gap:8px;}
+.theme-radio-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .15s;}
+.theme-radio-row:hover{background:rgba(255,255,255,.04);}
+.theme-radio-dot{width:18px;height:18px;border-radius:50%;border:2px solid #3a3a58;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.theme-radio-dot.checked{border-color:#a060e0;background:#a060e0;}
+.theme-radio-dot.checked::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;}
+.theme-radio-label{font-family:'Cinzel',serif;font-size:.75rem;color:var(--text);}
+/* color swatches */
+.theme-swatches{display:flex;flex-wrap:wrap;gap:8px;}
+.theme-swatch{width:36px;height:36px;border-radius:10px;cursor:pointer;border:3px solid transparent;transition:all .2s;position:relative;}
+.theme-swatch:hover{transform:scale(1.1);}
+.theme-swatch.active{border-color:#fff;}
+.theme-swatch.active::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:bold;}
+/* font options */
+.theme-font-row{display:flex;flex-direction:column;gap:7px;}
+.theme-font-opt{padding:9px 12px;border-radius:8px;cursor:pointer;font-size:.82rem;border:1px solid var(--border2);color:var(--text);background:transparent;transition:all .2s;text-align:left;}
+.theme-font-opt:hover{border-color:#4a4a68;}
+.theme-font-opt.active{border-color:#a060e0;background:rgba(160,96,224,.08);color:#c090f0;}
+.theme-close-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;padding:10px;border-radius:8px;cursor:pointer;transition:all .2s;text-transform:uppercase;margin-top:auto;}
+.theme-close-btn:hover{border-color:#f44336;color:#f44336;}
+.theme-divider{border:none;border-top:1px solid #1e1e2e;}
+/* achievements */
+.ach-grid{display:flex;flex-direction:column;gap:8px;}
+.ach-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--panel2);transition:all .2s;}
+.ach-item.unlocked{border-color:#5a8a40;background:rgba(80,160,40,.06);}
+.ach-item.locked{opacity:.45;}
+.ach-icon{font-size:1.4rem;min-width:28px;text-align:center;}
+.ach-info{flex:1;}
+.ach-name{font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.05em;margin-bottom:2px;}
+.ach-desc{font-size:.68rem;color:var(--muted);font-style:italic;}
+.ach-badge{font-family:'Cinzel',serif;font-size:.6rem;padding:3px 8px;border-radius:4px;white-space:nowrap;}
+.ach-badge.done{background:rgba(80,160,40,.15);color:#70c040;border:1px solid #3a6020;}
+.ach-badge.todo{background:rgba(60,60,80,.1);color:var(--muted);border:1px solid var(--border2);}
+.ach-section-title{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;}
+/* ── CUTSCENE ── */
+#cutscene{position:fixed;inset:0;z-index:20000;display:none;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}
+#cutscene.active{display:flex;}
+#cutscene.cs-transcendent{background:#000;}
+#cutscene.cs-transcendent .cs-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,#ffe066 0%,#ffaa00 25%,#ff6600 55%,#000 100%);animation:csFadeIn .8s ease forwards,csBgPulse 2s 0.8s ease-in-out infinite;}
+@keyframes csFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes csBgPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#cutscene.cs-transcendent .cs-rays{position:absolute;inset:0;background:conic-gradient(from 0deg at 50% 55%,transparent 0deg,rgba(255,220,80,.18) 5deg,transparent 10deg,transparent 20deg,rgba(255,200,60,.12) 25deg,transparent 30deg,transparent 40deg,rgba(255,220,80,.16) 45deg,transparent 50deg,transparent 60deg,rgba(255,200,60,.10) 65deg,transparent 70deg,transparent 80deg,rgba(255,220,80,.18) 85deg,transparent 90deg,transparent 120deg,rgba(255,220,80,.14) 125deg,transparent 130deg,transparent 150deg,rgba(255,200,60,.10) 155deg,transparent 160deg,transparent 180deg,rgba(255,220,80,.16) 185deg,transparent 190deg,transparent 220deg,rgba(255,200,60,.12) 225deg,transparent 230deg,transparent 270deg,rgba(255,220,80,.18) 275deg,transparent 280deg,transparent 300deg,rgba(255,200,60,.14) 305deg,transparent 310deg,transparent 340deg,rgba(255,220,80,.16) 345deg,transparent 360deg);animation:csFadeIn 1.2s .4s both,csRaysSpin 8s 1.2s linear infinite;}
+@keyframes csRaysSpin{to{transform:rotate(360deg)}}
+#cutscene.cs-transcendent .cs-title{position:relative;z-index:2;text-align:center;font-family:'Cinzel Decorative',cursive;color:#ffd700;text-shadow:0 0 40px #ffd700,0 0 80px #ffaa00,0 0 160px rgba(255,200,0,.6);animation:csTitleReveal 1.2s 0.6s cubic-bezier(.175,.885,.32,1.275) both;display:flex;flex-direction:column;align-items:center;gap:20px;}
+@keyframes csTitleReveal{0%{transform:scale(.2) translateY(60px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
+#cutscene.cs-transcendent .cs-word{font-size:clamp(2.5rem,10vw,5rem);letter-spacing:.25em;animation:csWordPulse 1.5s 1.8s ease infinite alternate;}
+@keyframes csWordPulse{from{text-shadow:0 0 40px #ffd700,0 0 80px #ffaa00}to{text-shadow:0 0 80px #fff,0 0 160px #ffd700,0 0 240px #ffaa00}}
+#cutscene.cs-transcendent .cs-sub{font-size:clamp(.9rem,3vw,1.4rem);letter-spacing:.3em;color:rgba(255,240,180,.8);font-family:'Cinzel',serif;animation:csFadeIn 1s 1.5s both;}
+#cutscene.cs-transcendent .cs-coins{font-size:clamp(1rem,3vw,1.6rem);color:#ffe066;font-family:'Cinzel',serif;animation:csFadeIn 1s 2s both;}
+#cutscene.cs-unknown{background:#000;}
+#cutscene.cs-unknown .cs-bg{position:absolute;inset:0;background:#000;animation:csUnkFlicker 4s ease-in-out infinite;}
+@keyframes csUnkFlicker{0%,100%{opacity:1}3%{opacity:.4}4%{opacity:1}18%{opacity:.7}19%{opacity:1}45%{opacity:.5}46%{opacity:1}72%{opacity:.3}73%{opacity:1}}
+#cutscene.cs-unknown .cs-crack{position:absolute;inset:0;background:linear-gradient(127deg,transparent 30%,rgba(255,255,255,.04) 30.5%,rgba(255,255,255,.08) 31%,transparent 31.5%),linear-gradient(63deg,transparent 40%,rgba(255,255,255,.05) 40.5%,rgba(255,255,255,.09) 41%,transparent 41.5%),linear-gradient(200deg,transparent 20%,rgba(255,255,255,.04) 20.5%,transparent 21%),linear-gradient(310deg,transparent 55%,rgba(255,255,255,.06) 55.5%,transparent 56%);animation:csCrackPulse 2s ease-in-out infinite;}
+@keyframes csCrackPulse{0%,100%{opacity:.4}50%{opacity:1}}
+#cutscene.cs-unknown .cs-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;}
+#cutscene.cs-unknown .cs-noise{position:absolute;inset:0;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+#cutscene.cs-unknown .cs-title{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;animation:csUnkReveal 1s .4s cubic-bezier(.175,.885,.32,1.275) both;}
+@keyframes csUnkReveal{0%{opacity:0;transform:scale(1.4) skewX(-8deg)}100%{opacity:1;transform:scale(1) skewX(0)}}
+#cutscene.cs-unknown .cs-word{font-family:'Cinzel Decorative',cursive;font-size:clamp(3rem,12vw,6rem);letter-spacing:.4em;color:#000;-webkit-text-stroke:3px #fff;text-shadow:0 0 20px #fff,0 0 50px #fff,0 0 100px rgba(255,255,255,.8);animation:csUnkGlitch 1.4s 1.2s ease infinite;}
+@keyframes csUnkGlitch{0%,90%,100%{transform:none;-webkit-text-stroke:3px #fff;text-shadow:0 0 20px #fff,0 0 50px #fff}91%{transform:skewX(8deg) translateX(-4px);text-shadow:4px 0 0 rgba(255,255,255,.8),-4px 0 0 rgba(255,255,255,.5)}92%{transform:skewX(-6deg) translateX(3px)}93%{transform:none;-webkit-text-stroke:3px #fff}96%{transform:translateX(-3px)}97%{transform:translateX(3px)}98%{transform:none}}
+#cutscene.cs-unknown .cs-sub{font-size:clamp(.8rem,2.5vw,1.2rem);letter-spacing:.3em;color:rgba(255,255,255,.5);font-family:'Cinzel',serif;animation:csUnkSubFlicker 3s 1.5s ease-in-out infinite;}
+@keyframes csUnkSubFlicker{0%,100%{opacity:.5}45%{opacity:.2}50%{opacity:.8}55%{opacity:.3}60%{opacity:.7}}
+#cutscene.cs-unknown .cs-coins{font-size:clamp(.9rem,2.5vw,1.4rem);color:rgba(255,255,255,.7);font-family:'Cinzel',serif;-webkit-text-stroke:.5px #fff;animation:csFadeIn 1s 2s both;}
+.cs-skip{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;color:rgba(255,255,255,.3);animation:csFadeIn 1s 2.5s both;pointer-events:none;}
+/* Cutscene star particles */
+.cs-star{position:absolute;border-radius:50%;pointer-events:none;animation:csStar var(--dur,2s) var(--delay,0s) ease-in-out infinite alternate;}
+@keyframes csStar{0%{transform:translate(0,0) scale(1);opacity:var(--oa,.8)}100%{transform:translate(var(--tx,10px),var(--ty,-20px)) scale(var(--sc,1.5));opacity:var(--ob,.2)}}
+/* Index */
+.cs-index-grid{display:flex;flex-direction:column;gap:10px;}
+.cs-index-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:11px;border:1px solid var(--border2);background:var(--panel2);transition:all .25s;}
+.cs-index-card:hover{transform:translateY(-2px);}
+.cs-index-card.trans-card{border-color:#5a4010;background:rgba(255,200,0,.04);}
+.cs-index-card.trans-card:hover{border-color:#a08020;box-shadow:0 0 20px rgba(255,200,0,.15);}
+.cs-index-card.unk-card{border-color:#303030;background:rgba(255,255,255,.02);}
+.cs-index-card.unk-card:hover{border-color:#666;box-shadow:0 0 20px rgba(255,255,255,.1);}
+.cs-index-card.void-card{border-color:#2a0050;background:rgba(124,0,224,.04);}
+.cs-index-card.void-card:hover{border-color:#5a00a0;box-shadow:0 0 20px rgba(124,0,224,.2);}
+.cs-index-icon{font-size:2rem;min-width:40px;text-align:center;}
+.cs-index-info{flex:1;}
+.cs-index-name{font-family:'Cinzel Decorative',cursive;font-size:.85rem;margin-bottom:3px;}
+.cs-index-name.trans-name{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.4);}
+.cs-index-name.unk-name{color:#fff;-webkit-text-stroke:.5px #fff;text-shadow:0 0 8px rgba(255,255,255,.3);}
+.cs-index-name.void-name{color:#7c00e0;text-shadow:0 0 10px rgba(124,0,224,.5);}
+.cs-index-desc{font-size:.7rem;color:var(--muted);font-style:italic;}
+.cs-index-count{font-size:.65rem;color:var(--muted);margin-top:2px;font-family:'Cinzel',serif;}
+.cs-replay-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;padding:8px 14px;border-radius:7px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.cs-replay-btn:hover{color:var(--text);border-color:var(--text);}
+.cs-locked-tag{font-family:'Cinzel',serif;font-size:.62rem;color:var(--muted);padding:8px 14px;letter-spacing:.08em;}
+.c-Celestial{color:#b388ff;}
+.glow-Celestial{text-shadow:0 0 30px #b388ff,0 0 70px rgba(179,136,255,.6),0 0 120px rgba(179,136,255,.3);animation:celestialShift 1s ease infinite alternate;}
+@keyframes celestialShift{from{text-shadow:0 0 25px #b388ff,0 0 60px rgba(179,136,255,.5)}to{text-shadow:0 0 45px #ce93d8,0 0 100px rgba(206,147,216,.7)}}
+.c-Void{color:#7c00e0;}
+.glow-Void{animation:voidPulse 1.5s ease-in-out infinite;}
+@keyframes voidPulse{0%,100%{color:#7c00e0;text-shadow:0 0 30px #7c00e0,0 0 80px rgba(124,0,224,.6)}30%{color:#1a0030;text-shadow:0 0 10px #3a0080}60%{color:#4a0090;text-shadow:0 0 50px #9000e0,0 0 140px rgba(144,0,224,.7),0 0 220px rgba(100,0,180,.3)}}
+/* ── VOID CUTSCENE ── */
+#cutscene.cs-void{background:#000;}
+#cutscene.cs-void .cs-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#0d0020 0%,#050010 40%,#000 70%);animation:voidBgPulse 3s ease-in-out infinite;}
+@keyframes voidBgPulse{0%,100%{background:radial-gradient(ellipse at 50% 50%,#0d0020 0%,#050010 40%,#000 70%)}50%{background:radial-gradient(ellipse at 50% 50%,#1a0040 0%,#0a0020 35%,#020008 65%,#000 100%)}}
+#cutscene.cs-void .cs-singularity{position:absolute;left:50%;top:50%;width:120px;height:120px;margin-left:-60px;margin-top:-60px;border-radius:50%;background:radial-gradient(circle,#000 30%,#1a003a 60%,transparent 70%);box-shadow:0 0 80px 40px rgba(124,0,224,.3),0 0 160px 80px rgba(80,0,180,.15),inset 0 0 40px rgba(124,0,224,.5);animation:voidSingularity 2s ease-in-out infinite;}
+@keyframes voidSingularity{0%,100%{transform:scale(1);box-shadow:0 0 80px 40px rgba(124,0,224,.3),0 0 160px 80px rgba(80,0,180,.15),inset 0 0 40px rgba(124,0,224,.5)}50%{transform:scale(1.15);box-shadow:0 0 120px 60px rgba(124,0,224,.5),0 0 240px 120px rgba(80,0,180,.25),inset 0 0 60px rgba(160,0,255,.7)}}
+#cutscene.cs-void .cs-accretion{position:absolute;left:50%;top:50%;width:400px;height:400px;margin-left:-200px;margin-top:-200px;border-radius:50%;border:2px solid transparent;background:conic-gradient(from 0deg,transparent 0deg,rgba(124,0,224,.15) 30deg,transparent 60deg,rgba(80,0,180,.1) 120deg,transparent 150deg,rgba(124,0,224,.12) 210deg,transparent 240deg,rgba(100,0,200,.08) 300deg,transparent 330deg);animation:voidAccretion 6s linear infinite;filter:blur(2px);}
+@keyframes voidAccretion{to{transform:rotate(-360deg)}}
+#cutscene.cs-void .cs-accretion2{position:absolute;left:50%;top:50%;width:600px;height:600px;margin-left:-300px;margin-top:-300px;border-radius:50%;background:conic-gradient(from 180deg,transparent 0deg,rgba(80,0,180,.08) 40deg,transparent 80deg,rgba(124,0,224,.06) 160deg,transparent 200deg,rgba(100,0,200,.05) 280deg,transparent 320deg);animation:voidAccretion2 10s linear infinite;filter:blur(3px);}
+@keyframes voidAccretion2{to{transform:rotate(360deg)}}
+#cutscene.cs-void .cs-vortex{position:absolute;inset:0;background:conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(124,0,224,.08) 15deg,transparent 30deg,transparent 60deg,rgba(80,0,180,.1) 75deg,transparent 90deg,transparent 120deg,rgba(124,0,224,.07) 135deg,transparent 150deg,transparent 180deg,rgba(80,0,180,.09) 195deg,transparent 210deg,transparent 240deg,rgba(124,0,224,.06) 255deg,transparent 270deg,transparent 300deg,rgba(80,0,180,.08) 315deg,transparent 330deg);animation:voidVortex 4s linear infinite;}
+@keyframes voidVortex{to{transform:rotate(360deg)}}
+#cutscene.cs-void .cs-ring{position:absolute;border-radius:50%;border:2px solid rgba(124,0,224,.4);box-shadow:0 0 20px rgba(124,0,224,.2),inset 0 0 20px rgba(124,0,224,.1);animation:voidRing var(--dur,3s) var(--delay,0s) ease-out infinite;}
+@keyframes voidRing{0%{transform:translate(-50%,-50%) scale(0);opacity:1;border-color:rgba(160,0,255,.6)}60%{border-color:rgba(124,0,224,.3)}100%{transform:translate(-50%,-50%) scale(5);opacity:0;border-color:rgba(80,0,180,0)}}
+#cutscene.cs-void .cs-lightning{position:absolute;inset:0;opacity:0;background:linear-gradient(127deg,transparent 30%,rgba(124,0,224,.06) 30.5%,rgba(160,0,255,.12) 31%,transparent 31.5%),linear-gradient(243deg,transparent 45%,rgba(80,0,180,.08) 45.5%,rgba(140,0,240,.1) 46%,transparent 46.5%),linear-gradient(330deg,transparent 20%,rgba(124,0,224,.05) 20.5%,transparent 21%),linear-gradient(55deg,transparent 60%,rgba(100,0,200,.07) 60.5%,transparent 61%);animation:voidLightning 4s ease-in-out infinite;}
+@keyframes voidLightning{0%,88%,92%,96%,100%{opacity:0}89%{opacity:1}90%{opacity:0}93%{opacity:.8}94%{opacity:0}97%{opacity:.6}98%{opacity:0}}
+#cutscene.cs-void .cs-distort{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(124,0,224,.02) 3px,rgba(124,0,224,.02) 6px);animation:voidDistort 8s linear infinite;pointer-events:none;}
+@keyframes voidDistort{0%{transform:translateY(0)}100%{transform:translateY(-6px)}}
+#cutscene.cs-void .cs-title{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;animation:voidReveal 1.2s .3s cubic-bezier(.175,.885,.32,1.275) both;}
+@keyframes voidReveal{0%{opacity:0;transform:scale(2);filter:blur(20px)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
+#cutscene.cs-void .cs-word{font-family:'Cinzel Decorative',cursive;font-size:clamp(3rem,12vw,6rem);letter-spacing:.5em;color:#7c00e0;text-shadow:0 0 40px #7c00e0,0 0 100px rgba(124,0,224,.8),0 0 200px rgba(80,0,180,.4);animation:voidWordPulse 2s ease infinite;}
+@keyframes voidWordPulse{0%,100%{text-shadow:0 0 40px #7c00e0,0 0 100px rgba(124,0,224,.8);color:#7c00e0}50%{text-shadow:0 0 80px #9000ff,0 0 200px rgba(144,0,255,.9),0 0 300px rgba(80,0,200,.5);color:#9000ff}}
+#cutscene.cs-void .cs-sub{font-size:clamp(.8rem,2.5vw,1.1rem);letter-spacing:.4em;color:rgba(124,0,224,.7);font-family:'Cinzel',serif;animation:csFadeIn 1s 1.5s both;}
+#cutscene.cs-void .cs-coins{font-size:clamp(.9rem,2.5vw,1.3rem);color:rgba(150,0,255,.9);font-family:'Cinzel',serif;animation:csFadeIn 1s 2s both;}
+.cs-void-particle{position:absolute;border-radius:50%;pointer-events:none;animation:voidAbsorb var(--dur,3s) var(--delay,0s) ease-in forwards;}
+@keyframes voidAbsorb{0%{opacity:.8;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx,0),var(--ty,0)) scale(0)}}
+/* live feed */
+.live-entry{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--border2);font-size:.74rem;animation:slideIn .3s ease forwards;}
+.live-entry.live-trans{border-color:#5a4010;background:rgba(255,200,0,.04);}
+.live-entry.live-unk{border-color:#333;background:rgba(255,255,255,.02);}
+.live-who{font-family:'Cinzel',serif;font-size:.72rem;flex:1;}
+.live-what{font-family:'Cinzel',serif;font-size:.7rem;}
+.live-when{font-size:.62rem;color:var(--muted);white-space:nowrap;}
+/* potion brewing */
+.brew-card{background:var(--panel2);border:1px solid var(--border2);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.brew-title{font-family:'Cinzel Decorative',cursive;font-size:.85rem;color:#d4a0ff;letter-spacing:.06em;}
+.brew-desc{font-size:.72rem;color:var(--muted);font-style:italic;}
+.brew-requirements{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.brew-req-item{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.7rem;display:flex;justify-content:space-between;align-items:center;}
+.brew-req-item.met{border-color:#3a6a3a;background:rgba(80,160,40,.06);}
+.brew-req-item.unmet{border-color:#6a3a3a;background:rgba(160,40,40,.06);}
+.brew-req-label{color:var(--muted);}
+.brew-req-val{font-family:'Cinzel',serif;font-size:.72rem;}
+.brew-btn{background:linear-gradient(135deg,#1a0a28,#120820);border:1px solid #7030b0;color:#c070e0;font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.12em;padding:11px;border-radius:8px;cursor:pointer;transition:all .2s;width:100%;}
+.brew-btn:hover{box-shadow:0 0 16px rgba(180,80,220,.3);border-color:#9040d0;}
+.brew-btn:disabled{opacity:.38;cursor:not-allowed;}
+.brew-progress{background:var(--panel2);border:1px solid #4a1080;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;}
+.brew-progress-title{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.2em;color:#a060d0;text-transform:uppercase;}
+.brew-progress-bar{height:8px;background:#1a0a28;border-radius:4px;overflow:hidden;}
+.brew-progress-fill{height:100%;background:linear-gradient(90deg,#7030b0,#c070e0);border-radius:4px;transition:width .5s ease;}
+.brew-progress-text{font-size:.72rem;color:#b070e0;text-align:center;}
+.brew-claim-btn{background:linear-gradient(135deg,#2a0848,#1a0535);border:1px solid #9030d0;color:#d070f0;font-family:'Cinzel Decorative',cursive;font-size:.78rem;letter-spacing:.1em;padding:13px;border-radius:9px;cursor:pointer;width:100%;transition:all .2s;animation:pulseGlow .8s ease infinite alternate;}
+.brew-claim-btn:hover{box-shadow:0 0 24px rgba(200,80,255,.4);}
+.cosmic-count{font-family:'Cinzel',serif;font-size:.72rem;color:#d4a0ff;padding:4px 0;}
+/* version banner */
+#versionBanner{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#1a0828,#0e0518);border-bottom:1px solid #8030c0;color:#c070e0;font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:19999;transform:translateY(-100%);transition:transform .4s ease;}
+#versionBanner.show{transform:translateY(0);}
+#versionBanner .vb-text{display:flex;align-items:center;gap:8px;}
+#versionBanner .vb-close{background:transparent;border:1px solid #5030a0;color:#9060c0;font-family:'Cinzel',serif;font-size:.6rem;padding:5px 10px;border-radius:5px;cursor:pointer;transition:all .2s;}
+#versionBanner .vb-close:hover{border-color:#a060d0;color:#c080e0;}
+</style>
+</head>
+<body>
+<div id="rebirthFlash"></div>
+<div class="app">
+  <h1>&#x2726; Rarity Roller &#x2726;</h1>
+  <div class="rebirth-crown" id="rebirthCrown"></div>
+
+  <div class="hud">
+    <div class="hud-chip"><span class="icon">&#x1FA99;</span><div><div class="val" id="hudCoins">0</div><div class="lbl">Coins</div></div></div>
+    <div class="hud-chip"><span class="icon">&#x1F3B2;</span><div><div class="val" id="hudRolls">0</div><div class="lbl">Rolls</div></div></div>
+    <div class="hud-chip"><span class="icon">&#x1F340;</span><div><div class="val" id="hudLuck">0%</div><div class="lbl">Luck</div></div></div>
+    <div class="hud-chip rebirth-chip"><span class="icon">&#x1F451;</span><div><div class="val" id="hudRebirths">0</div><div class="lbl">Rebirths</div></div></div>
+    <div class="hud-chip token-chip"><span class="icon">&#x1F48E;</span><div><div class="val" id="hudTokens">0</div><div class="lbl">Tokens</div></div></div>
+  </div>
+
+  <!-- Main tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('game')">&#x1F3B2; Play</button>
+    <button class="tab-btn" onclick="switchTab('leaderboard')">&#x1F3C6; Leaderboard</button>
+    <button class="tab-btn" onclick="switchTab('achievements')">&#x1F3C5; Achievements</button>
+    <button class="tab-btn" onclick="switchTab('index')">&#x1F4FA; Index</button>
+    <button class="tab-btn" id="brewingTabBtn" onclick="switchTab('brewing')">&#x1F512; Brewing</button>
+  </div>
+
+  <!-- GAME TAB -->
+  <div id="tabGame" class="tab-content active">
+    <div class="cols">
+      <!-- LEFT -->
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div class="panel">
+          <div class="panel-title">Current Roll</div>
+          <div class="result-display">
+            <div class="result-rarity" id="resultText">&#x2014;</div>
+            <div class="result-sub" id="resultSub">Press roll to begin your fate</div>
+          </div>
+          <div class="odds-bar" id="oddsBar"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Actions</div>
+          <button class="roll-btn" id="rollBtn" onclick="doRoll()">&#x2726; Roll &#x2726;</button>
+          <div class="auto-badge" id="autoBadge">&#x26A1; Auto-rolling</div>
+          <div class="potion-active-badge" id="potionBadge">&#x2728; Potion Active</div>
+          <div class="double-coins-badge" id="dcBadge">&#x1F4B0; Double Coins Active</div>
+          <div class="potion-grid">
+            <div class="potion-row">
+              <button class="pot-btn small" id="potSmallBtn" onclick="usePotion('small')">&#x1F9EA; Weak Vial</button>
+              <div class="pot-count small" id="potSmallCount">&#xD7;0</div>
+            </div>
+            <div class="potion-row">
+              <button class="pot-btn medium" id="potMedBtn" onclick="usePotion('medium')">&#x2697;&#xFE0F; Brewed Vial</button>
+              <div class="pot-count medium" id="potMedCount">&#xD7;0</div>
+            </div>
+            <div class="potion-row">
+              <button class="pot-btn large" id="potLrgBtn" onclick="usePotion('large')">&#x1F525; Strong Vial</button>
+              <div class="pot-count large" id="potLrgCount">&#xD7;0</div>
+            </div>
+            <div class="dc-row">
+              <button class="dc-btn" id="dcBtn" onclick="activateDC()" disabled>&#x1F4B0; Activate Coin Magnet</button>
+              <div class="pot-count" style="background:#201808;border:1px solid #604010;color:#d4a830;" id="dcCount">&#xD7;0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rebirth-panel">
+          <div class="rebirth-panel-title">&#x1F451; Rebirth</div>
+          <div class="rebirth-desc">Burn everything down. Walk away with permanent power and a token to spend in the Rebirth Shop.</div>
+          <div class="rebirth-req">Requires: <span id="rebirthReq">&#x2014;</span></div>
+          <div class="rebirth-perks" id="rebirthPerks"></div>
+          <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()" disabled>&#x1F451; Ascend</button>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div class="panel">
+          <div class="panel-title">&#x1F3EA; Shop</div>
+          <div class="shop-scroll" id="shopGrid"></div>
+        </div>
+
+        <div class="rebirth-shop-panel">
+          <div class="rebirth-shop-title">&#x1F48E; Rebirth Shop <span id="rsTokenDisplay" style="color:#9060c0;font-size:.55rem;letter-spacing:.1em;margin-left:6px;"></span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;" id="rebirthShopGrid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Stats</div>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="s-lbl">Best Roll</div><div class="s-val" id="statHighest">&#x2014;</div></div>
+            <div class="stat-box"><div class="s-lbl">All-Time Coins</div><div class="s-val" style="color:var(--gold)" id="statTotalCoins">0</div></div>
+            <div class="stat-box"><div class="s-lbl">Mythicals &#x221E;</div><div class="s-val" style="color:var(--mythical)" id="statMythical">0</div></div>
+            <div class="stat-box"><div class="s-lbl">Legendaries &#x221E;</div><div class="s-val" style="color:var(--legendary)" id="statLegendary">0</div></div>
+            <div class="stat-box"><div class="s-lbl">Exotics &#x221E;</div><div class="s-val" style="color:var(--exotic)" id="statExotic">0</div></div>
+            <div class="stat-box"><div class="s-lbl">Ubers &#x221E;</div><div class="s-val" style="color:var(--uber)" id="statUber">0</div></div>
+            <div class="stat-box"><div class="s-lbl">Secrets &#x221E;</div><div class="s-val" style="color:var(--secret)" id="statSecret">0</div></div>
+            <div class="stat-box"><div class="s-lbl">&#x1F5FF; &#x221E;</div><div class="s-val" style="color:var(--moai)" id="statMoai">0</div></div>
+            <div class="stat-box" style="grid-column:span 2"><div class="s-lbl">Celestials &#x221E;</div><div class="s-val c-Celestial" id="statCelestial">0</div></div>
+            <div class="stat-box" style="grid-column:span 2"><div class="s-lbl">Voids &#x221E;</div><div class="s-val c-Void" id="statVoid">0</div></div>
+            <div class="stat-box" style="grid-column:span 2"><div class="s-lbl">Transcendents &#x221E;</div><div class="s-val" style="color:var(--transcendent)" id="statTranscendent">0</div></div>
+            <div class="stat-box" style="grid-column:span 2"><div class="s-lbl">??? &#x221E;</div><div class="s-val" style="color:#aaa;-webkit-text-stroke:.5px #fff;" id="statUnknown">0</div></div>
+            <div class="stat-box" style="grid-column:span 2"><div class="s-lbl">Celestials Brewed &#x221E;</div><div class="s-val" style="color:#c080f0;" id="statCosmic">0</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Roll History</div>
+          <div class="history-list" id="historyList">
+            <div style="color:#333;font-size:.72rem;text-align:center;padding:8px;font-style:italic;">No rolls yet...</div>
+          </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">&#x26A0; Reset Everything</button>
+      </div>
+    </div>
+  </div><!-- end game tab -->
+
+  <!-- LEADERBOARD TAB -->
+  <div id="tabLeaderboard" class="tab-content">
+    <div class="panel">
+      <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>&#x1F3C6; Global Leaderboard</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="lb-status-dot" id="lbDot"></span><span id="lbStatusText" style="font-size:.58rem;letter-spacing:.08em;color:var(--muted);"></span></span>
+      </div>
+
+      <!-- identity row -->
+      <div class="lb-submit-row">
+        <div class="lb-name-display" id="lbNameDisplay">Not signed in</div>
+        <button class="lb-set-name-btn" id="lbSetNameBtn" onclick="openNameModal()">Set Name</button>
+        <button class="lb-push-btn" id="lbPushBtn" onclick="lbPushScore()" disabled>&#x2B06; Push Score</button>
+      </div>
+
+      <!-- sub-tabs -->
+      <div class="lb-tab-bar">
+        <button class="lb-sub-btn active" onclick="switchLbTab('rolls')">&#x1F3B2; Most Rolls</button>
+        <button class="lb-sub-btn" onclick="switchLbTab('coins')">&#x1FA99; Most Coins</button>
+        <button class="lb-sub-btn" onclick="switchLbTab('rebirths')">&#x1F451; Most Rebirths</button>
+      </div>
+
+      <!-- rolls board -->
+      <div class="lb-board active" id="lbBoardRolls">
+        <div class="lb-header-row" style="grid-template-columns:32px 1fr auto auto;">#<span>Player</span><span>Rolls</span><span>Best</span></div>
+        <div id="lbRowsRolls"><div class="lb-empty">Loading...</div></div>
+      </div>
+      <!-- coins board -->
+      <div class="lb-board" id="lbBoardCoins">
+        <div class="lb-header-row" style="grid-template-columns:32px 1fr auto auto;">#<span>Player</span><span>Coins</span><span>Best</span></div>
+        <div id="lbRowsCoins"><div class="lb-empty">Loading...</div></div>
+      </div>
+      <!-- rebirths board -->
+      <div class="lb-board" id="lbBoardRebirths">
+        <div class="lb-header-row" style="grid-template-columns:32px 1fr auto auto;">#<span>Player</span><span>Rebirths</span><span>Best</span></div>
+        <div id="lbRowsRebirths"><div class="lb-empty">Loading...</div></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="lb-set-name-btn" onclick="lbFetch()" style="font-size:.58rem;">&#x21BB; Refresh</button>
+      </div>
+    </div>
+  </div><!-- end leaderboard tab -->
+
+  <!-- ACHIEVEMENTS TAB -->
+  <div id="tabAchievements" class="tab-content">
+    <div class="panel">
+      <div class="panel-title">&#x1F3C5; Achievements <span id="achProgress" style="color:var(--muted);font-size:.58rem;letter-spacing:.1em;margin-left:8px;"></span></div>
+      <div class="ach-grid" id="achGrid"></div>
+    </div>
+  </div><!-- end achievements tab -->
+
+  <!-- INDEX TAB -->
+  <div id="tabIndex" class="tab-content">
+    <div class="panel">
+      <div class="panel-title">&#x1F4FA; Cutscene Index</div>
+      <p style="font-size:.72rem;color:var(--muted);font-style:italic;margin-bottom:4px;">Cutscenes play automatically when you roll these rarities. Replay them here any time.</p>
+      <div class="cs-index-grid" id="csIndexGrid"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>&#x1F30D; Live Global Rolls</span>
+        <button onclick="fetchLiveFeed()" style="background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:.58rem;padding:4px 10px;border-radius:5px;cursor:pointer;">&#x21BB; Refresh</button>
+      </div>
+      <div id="liveFeedList" style="display:flex;flex-direction:column;gap:5px;">
+        <div style="color:var(--muted);font-size:.72rem;font-style:italic;text-align:center;padding:12px;">Loading...</div>
+      </div>
+    </div>
+  </div><!-- end index tab -->
+
+  <!-- BREWING TAB -->
+  <div id="tabBrewing" class="tab-content">
+    <div class="panel" id="brewingLockedPanel" style="text-align:center;padding:40px 20px;">
+      <div style="font-size:3rem;margin-bottom:12px;">&#x1F512;</div>
+      <div style="font-family:'Cinzel Decorative',cursive;font-size:1rem;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;">Potion Brewing Locked</div>
+      <div style="font-size:.75rem;color:var(--muted);font-style:italic;">Purchase <strong style="color:#c080f0;">Unlock Brewing</strong> in the Rebirth Shop to access this tab.</div>
+    </div>
+    <div class="panel" id="brewingUnlockedPanel" style="display:none;flex-direction:column;gap:16px;">
+      <div class="panel-title">&#x2697;&#xFE0F; Potion Brewing</div>
+      <div style="font-size:.72rem;color:var(--muted);font-style:italic;">Consume rare materials to brew powerful potions. Brewing continues while offline. Play the minigame to reduce brew time.</div>
+
+      <!-- Celestial Potion Card -->
+      <div id="brewCelestialCard" style="background:var(--panel2);border:1px solid #3a1060;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.6rem;">&#x2728;</span>
+          <div style="flex:1;">
+            <div style="font-family:'Cinzel Decorative',cursive;font-size:.85rem;color:#c080f0;margin-bottom:2px;">Celestial Potion</div>
+            <div style="font-size:.68rem;color:var(--muted);font-style:italic;">Forged from rare matter. Adds +1 Celestial Brew to your permanent stats.</div>
+          </div>
+          <div style="text-align:right;"><div style="font-size:.58rem;color:var(--muted);font-family:'Cinzel',serif;">BREWED</div><div class="brew-count" style="font-family:'Cinzel Decorative',cursive;font-size:1rem;color:#c080f0;">0</div></div>
+        </div>
+        <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);">Requirements</div>
+        <div class="brew-reqs" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"></div>
+        <div style="font-size:.65rem;color:var(--muted);">&#x23F1; Base: 5 min &nbsp;|&nbsp; Great minigame: 2.5 min &nbsp;|&nbsp; OK: 4 min</div>
+        <div class="brew-status" style="display:none;font-size:.72rem;font-family:'Cinzel',serif;text-align:center;padding:8px;border-radius:7px;background:rgba(180,60,240,.06);border:1px solid rgba(180,60,240,.12);"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="brew-start-btn" onclick="startBrew('celestial')" style="flex:1;background:linear-gradient(135deg,#1a0530,#100320);border:1px solid #7030a0;color:#b060e0;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;transition:all .2s;">Start Brewing</button>
+          <button class="brew-mg-btn" onclick="startMinigame()" style="display:none;background:linear-gradient(135deg,#0a1830,#061020);border:1px solid #205070;color:#4090b0;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;">&#x1F3AE; Minigame</button>
+          <button class="brew-claim-btn" onclick="claimBrew()" style="display:none;flex:1;background:linear-gradient(135deg,#0a280a,#061806);border:1px solid #306030;color:#60b060;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;">&#x2728; Claim</button>
+        </div>
+      </div>
+
+      <!-- Void Potion Card -->
+      <div id="brewVoidCard" style="background:linear-gradient(135deg,#080010,#050008);border:1px solid #3a006a;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.6rem;">&#x25FE;</span>
+          <div style="flex:1;">
+            <div style="font-family:'Cinzel Decorative',cursive;font-size:.85rem;color:#7c00e0;margin-bottom:2px;text-shadow:0 0 12px rgba(124,0,224,.6);">Void Potion</div>
+            <div style="font-size:.68rem;color:#5a3080;font-style:italic;">Consumes what should not exist. Your next roll will be Void.</div>
+          </div>
+          <div style="text-align:right;"><div style="font-size:.58rem;color:#5a3080;font-family:'Cinzel',serif;">BREWED</div><div class="brew-count" style="font-family:'Cinzel Decorative',cursive;font-size:1rem;color:#7c00e0;">0</div></div>
+        </div>
+        <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:#5a3080;">Requirements</div>
+        <div class="brew-reqs" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"></div>
+        <div style="font-size:.65rem;color:#5a3080;">&#x23F1; Base: 12 hr &nbsp;|&nbsp; Great minigame: 6 hr &nbsp;|&nbsp; OK: 9 hr</div>
+        <div class="brew-status" style="display:none;font-size:.72rem;font-family:'Cinzel',serif;text-align:center;padding:8px;border-radius:7px;background:rgba(124,0,224,.06);border:1px solid rgba(124,0,224,.15);"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="brew-start-btn" onclick="startBrew('void')" style="flex:1;background:linear-gradient(135deg,#10002a,#080015);border:1px solid #5000a0;color:#7c00e0;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;transition:all .2s;">Start Brewing</button>
+          <button class="brew-mg-btn" onclick="startMinigame()" style="display:none;background:linear-gradient(135deg,#0a1830,#061020);border:1px solid #205070;color:#4090b0;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;">&#x1F3AE; Minigame</button>
+          <button class="brew-claim-btn" onclick="claimBrew()" style="display:none;flex:1;background:linear-gradient(135deg,#0a0018,#060010);border:1px solid #5000a0;color:#7c00e0;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;padding:11px;border-radius:8px;cursor:pointer;">&#x25FE; Claim Void</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- end brewing tab -->
+
+</div><!-- end app -->
+
+<!-- MINIGAME OVERLAY -->
+<div id="mgOverlay" style="display:none;position:fixed;inset:0;z-index:15000;background:rgba(0,0,0,.92);align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <div style="font-family:'Cinzel Decorative',cursive;font-size:1.1rem;color:#c080f0;letter-spacing:.15em;">&#x1F3AE; Brewing Minigame</div>
+  <div style="font-size:.75rem;color:var(--muted);font-family:'Cinzel',serif;text-align:center;max-width:320px;">Click when the bar is inside the glowing zone. The closer to center, the better.</div>
+  <!-- Track -->
+  <div id="mgTrack" style="position:relative;width:min(400px,85vw);height:50px;background:#0a0a18;border-radius:30px;overflow:hidden;border:2px solid #3a2060;cursor:pointer;" onclick="stopMinigame()">
+    <!-- Zone (target area) -->
+    <div id="mgZone" style="position:absolute;top:0;height:100%;width:15%;background:rgba(180,60,240,.35);border-radius:4px;transition:left .05s;"></div>
+    <!-- Bar -->
+    <div id="mgBar" style="position:absolute;top:8px;height:34px;width:8px;background:#e040fb;border-radius:4px;box-shadow:0 0 12px #e040fb;transition:left .016s;"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.65rem;color:rgba(255,255,255,.2);pointer-events:none;letter-spacing:.2em;">CLICK</div>
+  </div>
+  <div style="font-size:.68rem;color:#5a3080;font-family:'Cinzel',serif;">Click the track, or press Space</div>
+</div>
+
+<!-- version update banner -->
+<div id="updateBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:linear-gradient(135deg,#1a0830,#0e0520);border-bottom:1px solid #7030a0;padding:10px 20px;align-items:center;justify-content:space-between;gap:12px;font-family:'Cinzel',serif;">
+  <span style="font-size:.75rem;color:#c080f0;letter-spacing:.1em;">&#x1F451; Game updated to v<span id="bannerVersion"></span> — refresh for the latest.</span>
+  <button onclick="document.getElementById('updateBanner').style.display='none'" style="background:transparent;border:1px solid #4a2060;color:#8050a0;font-family:'Cinzel',serif;font-size:.6rem;padding:5px 12px;border-radius:5px;cursor:pointer;">Dismiss</button>
+</div>
+
+<!-- CUTSCENE OVERLAY -->
+<div id="cutscene" onclick="closeCutscene()"></div>
+<div id="toast"></div>
+
+<!-- Name-set modal -->
+<div id="nameModal">
+  <div id="nameModalBox">
+    <h2>&#x1F465; Pick Your Name</h2>
+    <p>This is permanent — you can't change it later.<br/>Choose something you're happy with.</p>
+    <input id="nameInput" maxlength="20" placeholder="Your name..." onkeydown="if(event.key==='Enter') confirmName()"/>
+    <button id="nameConfirmBtn" onclick="confirmName()">Lock It In</button>
+    <button id="nameCancelBtn" onclick="closeNameModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Theme button -->
+<button id="themeBtn" onclick="openTheme()" title="Theme Settings">&#x1F3A8;</button>
+
+<!-- Theme modal -->
+<div id="themeOverlay" onclick="if(event.target===this)closeTheme()">
+  <div id="themeModal">
+    <h2>&#x1F3A8; Theme</h2>
+
+    <div>
+      <div class="theme-section-title">Color Mode</div>
+      <div class="theme-section-sub">Background brightness</div>
+      <div class="theme-mode-row" id="themeModeRows"></div>
+    </div>
+
+    <hr class="theme-divider"/>
+
+    <div>
+      <div class="theme-section-title">Accent Color</div>
+      <div class="theme-section-sub">Changes highlights and glow effects</div>
+      <div class="theme-swatches" id="themeSwatches"></div>
+    </div>
+
+    <hr class="theme-divider"/>
+
+    <div>
+      <div class="theme-section-title">Font</div>
+      <div class="theme-section-sub">Changes the body text style</div>
+      <div class="theme-font-row" id="themeFontRows"></div>
+    </div>
+
+    <button class="theme-close-btn" onclick="closeTheme()">Close</button>
+  </div>
+</div>
+
+<!-- Admin -->
+<button id="adminBtn" onclick="openAdmin()">&#x2699;</button>
+<div id="adminOverlay">
+  <div id="adminModal">
+    <div id="adminLoginScreen">
+      <h2>&#x1F511; Admin</h2>
+      <div class="admin-row">
+        <label class="admin-lbl">Password</label>
+        <input class="admin-input" id="adminPwInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter') adminLogin()"/>
+      </div>
+      <button class="admin-apply-btn" onclick="adminLogin()">Unlock</button>
+      <div id="adminPwError" style="color:#f44336;font-size:.65rem;font-family:'Cinzel',serif;text-align:center;display:none;">Wrong password.</div>
+      <button class="admin-close" onclick="closeAdmin()">Cancel</button>
+    </div>
+    <div id="adminPanelScreen" style="display:none;flex-direction:column;gap:14px;">
+      <h2>&#x1F451; Admin Panel</h2>
+      <div class="admin-row">
+        <label class="admin-lbl">Add Coins</label>
+        <input class="admin-input" id="adminCoins" type="number" min="0" placeholder="e.g. 10000"/>
+        <button class="admin-apply-btn" onclick="adminAddCoins()">Apply</button>
+      </div>
+      <hr class="admin-divider"/>
+      <div class="admin-row">
+        <label class="admin-lbl">Add Luck % (session)</label>
+        <input class="admin-input" id="adminLuck" type="number" min="0" placeholder="e.g. 50"/>
+        <button class="admin-apply-btn" onclick="adminAddLuck()">Apply</button>
+      </div>
+      <hr class="admin-divider"/>
+      <div class="admin-row">
+        <label class="admin-lbl">Force Next Roll</label>
+        <select class="admin-select" id="adminRarity">
+          <option value="">— Normal —</option>
+          <option value="Common">Common</option>
+          <option value="Uncommon">Uncommon</option>
+          <option value="Rare">Rare</option>
+          <option value="Epic">Epic</option>
+          <option value="Legendary">Legendary</option>
+          <option value="Mythical">Mythical</option>
+          <option value="Exotic">Exotic</option>
+          <option value="Uber">Uber</option>
+          <option value="Secret">Secret</option>
+          <option value="&#x1F5FF;">&#x1F5FF;</option>
+          <option value="Transcendent">Transcendent</option>
+          <option value="???">???</option>
+        </select>
+        <button class="admin-apply-btn" onclick="adminForceRoll()">Set</button>
+      </div>
+      <hr class="admin-divider"/>
+      <button class="admin-close" onclick="closeAdmin()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──
+const RARITIES = ["Common","Uncommon","Rare","Epic","Legendary","Mythical","Exotic","Uber","Secret","\uD83D\uDDFF","Celestial","Transcendent","???","Void"];
+const BASE_W   = [50, 25, 12, 8, 4, 0.89, 0.1, 0.01, 0.003, 0.0005, 0.00008, 0.00003, 0.000015, 0.000001];
+const COLORS   = {Common:'#9a9a9a',Uncommon:'#4caf50',Rare:'#2196f3',Epic:'#ab47bc',Legendary:'#ff9800',Mythical:'#f44336',Exotic:'#AAFF00',Uber:'#32cd32',Secret:'#00e5ff','\uD83D\uDDFF':'#ffffff',Celestial:'#b388ff',Transcendent:'#ffd700','???':'#000000',Void:'#7c00e0'};
+const COIN_REWARDS = {Common:1,Uncommon:3,Rare:8,Epic:20,Legendary:60,Mythical:200,Exotic:500,Uber:1000,Secret:5000,'\uD83D\uDDFF':25000,Celestial:80000,Transcendent:100000,'???':1000000,Void:1000000000};
+// Transcendent base chance: 0.00003 / (50+25+12+8+4+0.89+0.1+0.01+0.003+0.0005+0.00003) ≈ 0.003%
+// Hard cap applied in getWeights: never exceeds 0.005% regardless of luck
+
+function safeClass(r){ return r==='\uD83D\uDDFF'?'Moai':r==='???'?'Unknown':r; }
+
+const REBIRTH_BASE = [300,1000,3000,8000,20000,60000,150000];
+
+const SHOP_ITEMS = [
+  {id:'luck1',type:'luck',name:'Lucky Charm',desc:"People talk about these a lot.",icon:'&#x1F340;',
+   levels:[
+     {cost:30,   luckBonus:5,  label:'+5% luck'},
+     {cost:500,  luckBonus:20, label:'+20% luck'},
+     {cost:2000, luckBonus:40, label:'+40% luck'},
+     {cost:8000, luckBonus:70, label:'+70% luck'},
+     {cost:30000,luckBonus:110,label:'+110% luck'},
+   ]},
+  {id:'luck2',type:'luck',name:'Carved Rune',desc:"Some random fossil that your Grandma is offering you for a price.",icon:'&#x1F52E;',
+   levels:[
+     {cost:200,  luckBonus:10, label:'+10% luck'},
+     {cost:1000, luckBonus:30, label:'+30% luck'},
+     {cost:2000, luckBonus:80, label:'+80% luck'},
+     {cost:10000,luckBonus:130,label:'+130% luck'},
+     {cost:50000,luckBonus:200,label:'+200% luck'},
+     {cost:1500000,luckBonus:300,label:'+300% luck'},
+   ]},
+  {id:'luck3',type:'luck',name:'Third Eye',desc:"Having a third eye causes you to become more addicted, increasing luck",icon:'&#x1F441;',
+   levels:[
+     {cost:150,  luckBonus:15, label:'+15% luck'},
+     {cost:400,  luckBonus:30, label:'+30% luck'},
+     {cost:900,  luckBonus:50, label:'+50% luck'},
+     {cost:5000, luckBonus:90, label:'+90% luck'},
+     {cost:20000,luckBonus:150,label:'+150% luck'},
+   ]},
+  {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"More coins.",icon:'&#x1F4B0;',
+   levels:[
+     {cost:40,    coinMult:1.5, label:'x1.5 coins'},
+     {cost:500,   coinMult:2.0, label:'x2.0 coins'},
+     {cost:1000,  coinMult:3.0, label:'x3.0 coins'},
+     {cost:8000,  coinMult:5.0, label:'x5.0 coins'},
+     {cost:40000, coinMult:8.0, label:'x8.0 coins'},
+     {cost:1000000,coinMult:10.0,label:'x10.0 coins'},
+   ]},
+  {id:'starFragment',type:'flatCoins',name:'Star dust',desc:"Powerful.",icon:'&#x2B50;',
+   levels:[
+     {cost:200,   flatCoins:3,   label:'+3/roll'},
+     {cost:900,   flatCoins:10,  label:'+10/roll'},
+     {cost:3500,  flatCoins:30,  label:'+30/roll'},
+     {cost:15000, flatCoins:100, label:'+100/roll'},
+     {cost:200000, flatCoins:300, label:'+300/roll'},
+     {cost:1000000, flatCoins:1000, label:'+1000/roll'},
+   ]},
+  {id:'potionSmall',type:'consumable',potionType:'small',name:'Weak Luck Vial',desc:'+40% luck for 5 rolls.',icon:'&#x1F9EA;',
+   levels:[{cost:50,qty:1,label:'Buy x1'},{cost:130,qty:3,label:'Buy x3'},{cost:300,qty:8,label:'Buy x8'}],repeatable:true},
+  {id:'potionMedium',type:'consumable',potionType:'medium',name:'Brewed Luck Vial',desc:'+60% luck for 8 rolls.',icon:'&#x2697;&#xFE0F;',
+   levels:[{cost:200,qty:1,label:'Buy x1'},{cost:520,qty:3,label:'Buy x3'},{cost:1100,qty:8,label:'Buy x8'}],repeatable:true},
+  {id:'potionLarge',type:'consumable',potionType:'large',name:'Strong Luck Vial',desc:'+80% luck for 12 rolls.',icon:'&#x1F525;',
+   levels:[{cost:500,qty:1,label:'Buy x1'},{cost:1300,qty:3,label:'Buy x3'},{cost:2800,qty:8,label:'Buy x8'}],repeatable:true},
+  {id:'doubleCoins',type:'consumable',potionType:'dc',name:'Coin Magnet',desc:'Next 2 rolls pull in double coins.',icon:'&#x1F9F2;',
+   levels:[{cost:3000,qty:2,label:'Buy (2 rolls)'},{cost:7000,qty:6,label:'Buy (6 rolls)'},{cost:18000,qty:16,label:'Buy (16 rolls)'}],repeatable:true},
+];
+
+const REBIRTH_SHOP_ITEMS = [
+  {id:'slowAutoRoll',  name:'Slow auto roll',   icon:'&#x1F40C;', cost:1,     desc:'Rolls on its own every 3 seconds.',       group:'autoRoll'},
+  {id:'autoPotionUse', name:'Auto potion use',  icon:'&#x1F916;', cost:1,     desc:'Uses your best luck potion automatically when it runs out.'},
+  {id:'luckForever',   name:'Blessed Forever',  icon:'&#x267E;&#xFE0F;', cost:3, desc:'+50% luck, forever.'},
+  {id:'autoRoll',      name:'Auto roll',        icon:'&#x26A1;',  cost:5,     desc:'Rolls automatically every second.',       group:'autoRoll'},
+  {id:'fastAutoRoll',  name:'Fast auto roll',   icon:'&#x1F680;', cost:10,    desc:'Rolls 3 times a second.',                 group:'autoRoll'},
+  {id:'ultraAutoRoll', name:'Giga roller',      icon:'&#x1F4A5;', cost:1000,    desc:'Rolls 10 times a second.',                group:'autoRoll'},
+  {id:'omegaAutoRoll', name:'Omega roller',     icon:'&#x1F300;', cost:15000, desc:'Rolls 50 times a second.',                group:'autoRoll'},
+  {id:'coinRain',      name:'Gold Shower',      icon:'&#x1F327;&#xFE0F;', cost:2, desc:'+25% on all coin drops, every roll, forever.'},
+  {id:'fortunesSon',   name:'Common Blocker',   icon:'&#x1F9E7;', cost:4,     desc:'Bans Common and Uncommon from ever being rolled.'},
+  {id:'autoRebirth',   name:'Auto Ascend',      icon:'&#x1F504;', cost:15,    desc:'Automatically rebirths when you qualify. Toggle ON/OFF.'},
+  {id:'fastAutoRebirth',name:'Fast Auto Ascend',icon:'&#x26A1;&#x1F504;', cost:5000, desc:'Rebirths instantly the millisecond you qualify.'},
+  {id:'unlockBrewing', name:'Unlock Brewing',   icon:'&#x2697;&#xFE0F;', cost:10000, desc:'Unlocks the Potion Brewing tab. Brew powerful potions from rare materials.'},
+];
+
+const KEY = 'rarityRoller4';
+let adminLuckBonus = 0;
+let forcedRarity = null;
+
+// ── STATE ──
+function defaultState(){
+  return {
+    coins:0,totalCoins:0,rolls:0,
+    highest:null,
+    mythicals:0,legendaries:0,exotics:0,ubers:0,secrets:0,moais:0,celestials:0,transcendents:0,unknowns:0,voids:0,
+    ltMythicals:0,ltLegendaries:0,ltExotics:0,ltUbers:0,ltSecrets:0,ltMoais:0,ltCelestials:0,ltTranscendents:0,ltUnknowns:0,ltVoids:0,ltRolls:0,
+    ltCelestialBrews:0,ltVoidBrews:0,
+    history:[],upgrades:{},
+    potionsSmall:0,potionsMedium:0,potionsLarge:0,
+    potionRollsLeft:0,potionLuckValue:0,
+    doubleCoinRolls:0,dcActive:false,
+    rebirths:0,rebirthTokens:0,
+    rebirthShop:{},
+    rebirthLuckBonus:0,rebirthCoinBonus:0,
+    totalRebirthCoins:0,
+    autoRollEnabled:true,
+    autoRebirthEnabled:false,
+    pityTranscendent:0,
+    pityUnknown:0,
+    achievements:{},
+    seenCutscenes:{},
+    brewingPotion:null,
+    brewingStartTime:null,
+    brewDurationMs:null,
+    minigameDone:false,
+    nextRollForced:null,
+  };
+}
+function load(){
+  try{ const s=localStorage.getItem(KEY); if(!s) return defaultState(); return {...defaultState(),...JSON.parse(s)}; }
+  catch{ return defaultState(); }
+}
+function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
+let state=load();
+
+// ── LUCK / WEIGHTS ──
+function getUpgradeLuck(){
+  let b=0;
+  SHOP_ITEMS.forEach(item=>{
+    if(item.type!=='luck') return;
+    const lvl=state.upgrades[item.id]||0;
+    if(lvl>0) b+=item.levels[lvl-1].luckBonus;
+  });
+  return b;
+}
+function getPotionLuck(){ return state.potionRollsLeft>0?(state.potionLuckValue||0):0; }
+function getTotalLuck(){
+  return getUpgradeLuck()+getPotionLuck()+(state.rebirthLuckBonus||0)
+    +((state.rebirthShop&&state.rebirthShop.luckForever)?50:0)+(adminLuckBonus||0);
+}
+function getCoinMult(){
+  const lvl=state.upgrades['coinBoost']||0;
+  const shopMult=lvl>0?SHOP_ITEMS.find(i=>i.id==='coinBoost').levels[lvl-1].coinMult:1;
+  const rebirthMult=1+(state.rebirthCoinBonus||0)/100;
+  const rsRainMult=(state.rebirthShop&&state.rebirthShop.coinRain)?1.25:1;
+  return shopMult*rebirthMult*rsRainMult;
+}
+function getFlatCoins(){
+  const lvl=state.upgrades['starFragment']||0;
+  return lvl>0?SHOP_ITEMS.find(i=>i.id==='starFragment').levels[lvl-1].flatCoins:0;
+}
+function getWeights(){
+  let w=[...BASE_W];
+  const luck=getTotalLuck();
+  const fortunesSon=!!(state.rebirthShop&&state.rebirthShop.fortunesSon);
+  if(fortunesSon){ w[0]=0; w[1]=0; }
+
+  if(luck>0){
+    // Sigmoid fraction: meaningful at low luck, powerful at high luck, never fully saturates
+    const frac = Math.min(luck / (luck + 150), 0.93);
+
+    // Pull weight OUT of low tiers
+    const p0 = fortunesSon ? 0 : frac * (w[0] - 0.01);
+    const p1 = fortunesSon ? 0 : frac * (w[1] - 0.01);
+    const p2 = frac * (w[2] - 0.01);
+    const p3 = frac * (w[3] - 0.01) * 0.5; // only half from Epic
+    w[0] -= p0; w[1] -= p1; w[2] -= p2; w[3] -= p3;
+    const pulled = p0 + p1 + p2 + p3;
+
+    // Push pulled weight into rarer tiers
+    w[4]  += pulled * 0.28;
+    w[5]  += pulled * 0.24;
+    w[6]  += pulled * 0.19;
+    w[7]  += pulled * 0.12;
+    w[8]  += pulled * 0.065;
+    w[9]  += pulled * 0.025;
+    w[10] += pulled * 0.012;  // Celestial
+    w[11] += pulled * 0.006;  // Transcendent
+    w[12] += pulled * 0.003;  // ???
+    // Void gets no luck boost — it's always 1-in-a-million max
+  }
+
+  const total = w.reduce((a,b)=>a+b,0);
+  w[11] = Math.min(w[11], total * 0.00005);   // Transcendent cap 0.005%
+  w[12] = Math.min(w[12], total * 0.000025);  // ??? cap 0.0025%
+  w[13] = Math.min(w[13], total * 0.000001);  // Void hard cap: 1-in-a-million always
+  return w;
+}
+function weightedRandom(weights){
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total;
+  for(let i=0;i<RARITIES.length;i++){r-=weights[i];if(r<=0)return RARITIES[i];}
+  return RARITIES[0];
+}
+function rarityRank(r){return RARITIES.indexOf(r);}
+
+// ── REBIRTH ──
+function getRebirthThreshold(){
+  const n=state.rebirths;
+  if(n<REBIRTH_BASE.length) return REBIRTH_BASE[n];
+  // Always increasing: 1m per rebirth after the base list, no cap
+  const extra=n-REBIRTH_BASE.length+1;
+  return REBIRTH_BASE[REBIRTH_BASE.length-1]+extra*1000000;
+}
+function getAllTimeCoins(){ return (state.totalRebirthCoins||0)+state.totalCoins; }
+function canRebirth(){ return getAllTimeCoins()>=getRebirthThreshold(); }
+
+function doRebirth(){
+  if(!canRebirth()) return;
+  const newR=state.rebirths+1;
+  const carryCoins=getAllTimeCoins();
+  const prevShop=state.rebirthShop||{};
+  const prevTokens=(state.rebirthTokens||0)+1;
+  const lt={
+    ltMythicals:(state.ltMythicals||0)+(state.mythicals||0),
+    ltLegendaries:(state.ltLegendaries||0)+(state.legendaries||0),
+    ltExotics:(state.ltExotics||0)+(state.exotics||0),
+    ltUbers:(state.ltUbers||0)+(state.ubers||0),
+    ltSecrets:(state.ltSecrets||0)+(state.secrets||0),
+    ltMoais:(state.ltMoais||0)+(state.moais||0),
+    ltCelestials:(state.ltCelestials||0)+(state.celestials||0),
+    ltTranscendents:(state.ltTranscendents||0)+(state.transcendents||0),
+    ltUnknowns:(state.ltUnknowns||0)+(state.unknowns||0),
+    ltVoids:(state.ltVoids||0)+(state.voids||0),
+    ltRolls:(state.ltRolls||0)+(state.rolls||0),
+    ltCelestialBrews:(state.ltCelestialBrews||0),
+    ltVoidBrews:(state.ltVoidBrews||0),
+  };
+  const prevHighest=state.highest;
+  const prevAchievements=state.achievements||{};
+  const prevHistory=[...state.history];
+  const prevSeen=state.seenCutscenes||{};
+  const prevAutoRoll=state.autoRollEnabled!==false;
+  const prevAutoRebirth=state.autoRebirthEnabled!==false;
+  const prevBrew={
+    brewingPotion:state.brewingPotion,
+    brewingStartTime:state.brewingStartTime,
+    brewDurationMs:state.brewDurationMs,
+    minigameDone:state.minigameDone||false,
+  };
+  state=defaultState();
+  state.rebirths=newR; state.rebirthLuckBonus=newR*8; state.rebirthCoinBonus=newR*10;
+  state.totalRebirthCoins=carryCoins; state.rebirthTokens=prevTokens;
+  state.rebirthShop=prevShop; state.highest=prevHighest;
+  state.autoRollEnabled=prevAutoRoll;
+  state.autoRebirthEnabled=prevAutoRebirth;
+  state.achievements=prevAchievements;
+  state.history=prevHistory;
+  state.seenCutscenes=prevSeen;
+  state.brewingPotion=prevBrew.brewingPotion;
+  state.brewingStartTime=prevBrew.brewingStartTime;
+  state.brewDurationMs=prevBrew.brewDurationMs;
+  state.minigameDone=prevBrew.minigameDone;
+  Object.assign(state,lt);
+  lastRebirthTime=Date.now();
+  save();
+  updateAutoRoll(); renderAll();
+  lbAutoSubmit();
+  checkAchievements();
+  toast('\uD83D\uDC51 Rebirth '+newR+'. +8% luck, +10% coins. +1 Token.');
+}
+
+// ── REBIRTH SHOP ──
+function buyRebirthItem(id){
+  const item=REBIRTH_SHOP_ITEMS.find(i=>i.id===id);
+  if(!item||state.rebirthShop[id]){ toast(state.rebirthShop[id]?'Already have it!':'?'); return; }
+  if((state.rebirthTokens||0)<item.cost){ toast('Not enough tokens.'); return; }
+  state.rebirthTokens-=item.cost; state.rebirthShop[id]=true;
+  save(); updateAutoRoll(); renderAll();
+  toast('Unlocked: '+item.name+'!');
+}
+
+// ── ROLL ──
+function doRoll(){
+  const btn=document.getElementById('rollBtn');
+  if(!isAutoRolling) btn.disabled=true;
+  const w=getWeights();
+  // Pity: 10000 rolls without Transcendent = guaranteed, 20000 without ??? = guaranteed
+  let result;
+  if(!forcedRarity && (state.pityUnknown||0)>=80000){ result='???'; state.achievements=state.achievements||{}; state.achievements.pityUnk=true; }
+  else if(!forcedRarity && (state.pityTranscendent||0)>=50000){ result='Transcendent'; state.achievements=state.achievements||{}; state.achievements.pityTrans=true; }
+  else if(state.nextRollForced){ result=state.nextRollForced; state.nextRollForced=null; }
+  else { result=forcedRarity?forcedRarity:weightedRandom(w); }
+  if(forcedRarity){forcedRarity=null;document.getElementById('adminRarity').value='';}
+  if(state.potionRollsLeft>0){
+    state.potionRollsLeft--;
+    if(state.potionRollsLeft===0){
+      state.potionLuckValue=0;
+      if(state.rebirthShop&&state.rebirthShop.autoPotionUse){
+        if(state.potionsLarge>0){state.potionsLarge--;applyPotion('large');}
+        else if(state.potionsMedium>0){state.potionsMedium--;applyPotion('medium');}
+        else if(state.potionsSmall>0){state.potionsSmall--;applyPotion('small');}
+      }
+    }
+  }
+  const base=COIN_REWARDS[result];
+  const flat=getFlatCoins();
+  let earned=Math.round((base+flat)*getCoinMult());
+  if(state.dcActive&&state.doubleCoinRolls>0){
+    earned*=2; state.doubleCoinRolls--;
+    if(state.doubleCoinRolls===0) state.dcActive=false;
+  }
+  state.coins+=earned; state.totalCoins+=earned; state.rolls++;
+  state.pityTranscendent=(state.pityTranscendent||0)+1;
+  state.pityUnknown=(state.pityUnknown||0)+1;
+  state.history.unshift({r:result,c:earned});
+  if(state.history.length>60) state.history.pop();
+  if(!state.highest||rarityRank(result)>rarityRank(state.highest)) state.highest=result;
+  if(result==='Mythical')    {state.mythicals++;}
+  if(result==='Legendary')   {state.legendaries++;}
+  if(result==='Exotic')      {state.exotics++;}
+  if(result==='Uber')        {state.ubers++;}
+  if(result==='Secret')      {state.secrets++;}
+  if(result==='\uD83D\uDDFF'){state.moais++;}
+  if(result==='Celestial')   {state.celestials=(state.celestials||0)+1;}
+  if(result==='Transcendent'){state.transcendents=(state.transcendents||0)+1;state.pityTranscendent=0;}
+  if(result==='???')         {state.unknowns=(state.unknowns||0)+1;state.pityUnknown=0;state.pityTranscendent=0;}
+  if(result==='Void')        {state.voids=(state.voids||0)+1;}
+  if(result==='Transcendent'||result==='???'||result==='Void') pushLiveEvent(result);
+  save(); renderAll(); animateResult(result,earned);
+  if(rarityRank(result)>=2) spawnParticles(COLORS[result]);
+  lbAutoSubmit();
+  checkAchievements();
+  if(!isAutoRolling) setTimeout(()=>{btn.disabled=false;},380);
+}
+
+function animateResult(result,earned){
+  const el=document.getElementById('resultText');
+  const sc=safeClass(result);
+  el.className='result-rarity'; void el.offsetWidth;
+  el.textContent=result;
+  el.className='result-rarity pop c-'+sc+' glow-'+sc;
+  document.getElementById('resultSub').textContent='+'+earned+'\uD83E\uDE99  '+getFlavorText(result);
+  if(result==='Transcendent'||result==='???'||result==='Void') playCutscene(result,earned);
+}
+
+function getFlavorText(r){
+  const t={
+    Common:['Roll me while you can.','Nothing special.','Dont block me :(.'],
+    Uncommon:['Still not rare.','Could be worse.','I am still better than common.'],
+    Rare:['I am not really rare am I?.','Still not impressive.','Meh.'],
+    Epic:['Now we\'re talking.','Not good, but not bad.','Decent...'],
+    Legendary:['LEGENDARY!!!','Not bad at all','Nice'],
+    Mythical:['MYTHICAL!!!\uD83D\uDD25','This shouldn\'t happen.','The gods are watching.'],
+    Exotic:['EXOTIC!!!\u2728','Reality bends.','You weren\'t supposed to get this.'],
+    Uber:['U B E R!!!\uD83D\uDC51','The ground shakes.','Even the dice are surprised.'],
+    Secret:['shh...','You found something hidden.','Don\'t tell anyone.'],
+    '\uD83D\uDDFF':['...','...','...'],
+    Celestial:['CELESTIAL!','The stars bow.','Written in the sky.'],
+    Transcendent:['TRANSCENDENT.','The veil tears open.','There are no words.'],
+    '???':['...what?','This was not meant to happen.','ERROR: RARITY NOT FOUND'],
+    Void:['THE VOID OPENS.','You have been consumed.','There is nothing left.'],
+  };
+  const a=t[r]||['???'];
+  return a[Math.floor(Math.random()*a.length)];
+}
+
+// ── POTIONS ──
+function applyPotion(type){
+  const defs={small:{luck:40,rolls:5},medium:{luck:60,rolls:8},large:{luck:80,rolls:12}};
+  const d=defs[type];
+  state.potionRollsLeft+=d.rolls;
+  state.potionLuckValue=Math.max(state.potionLuckValue||0,d.luck);
+}
+function usePotion(type){
+  const keys={small:'potionsSmall',medium:'potionsMedium',large:'potionsLarge'};
+  const names={small:'Weak',medium:'Brewed',large:'Strong'};
+  const defs={small:{luck:40,rolls:5},medium:{luck:60,rolls:8},large:{luck:80,rolls:12}};
+  if((state[keys[type]]||0)<=0){toast('No '+names[type]+' Vials left!');return;}
+  state[keys[type]]--; applyPotion(type);
+  save(); renderAll();
+  toast('\uD83E\uDDEA +'+defs[type].luck+'% luck for '+defs[type].rolls+' rolls!');
+}
+function activateDC(){
+  if((state.doubleCoinRolls||0)<=0){toast('No Coin Magnet charges!');return;}
+  if(state.dcActive){toast('Already active!');return;}
+  state.dcActive=true; save(); renderAll();
+  toast('\uD83D\uDCB0 Double coins active for '+state.doubleCoinRolls+' rolls!');
+}
+
+// ── SHOP ──
+function buyItem(id,levelIndex){
+  const item=SHOP_ITEMS.find(i=>i.id===id);
+  const lvl=item.levels[levelIndex];
+  if(state.coins<lvl.cost){toast('Not enough coins!');return;}
+  state.coins-=lvl.cost;
+  if(item.type==='consumable'){
+    if(item.potionType==='small') state.potionsSmall=(state.potionsSmall||0)+lvl.qty;
+    else if(item.potionType==='medium') state.potionsMedium=(state.potionsMedium||0)+lvl.qty;
+    else if(item.potionType==='large') state.potionsLarge=(state.potionsLarge||0)+lvl.qty;
+    else if(item.potionType==='dc') state.doubleCoinRolls=(state.doubleCoinRolls||0)+lvl.qty;
+    toast('Bought '+lvl.qty+'x '+item.name+'!');
+  } else {
+    state.upgrades[id]=levelIndex+1;
+    toast(item.name+' upgraded — '+lvl.label+'!');
+  }
+  save(); renderAll();
+}
+
+// ── AUTO ROLL ──
+let autoRollTimer=null;
+let autoRebirthTimer=null;
+let isAutoRolling=false;
+
+function getAutoRollDelay(){
+  const rs=state.rebirthShop||{};
+  if(rs.omegaAutoRoll) return 20;
+  if(rs.ultraAutoRoll) return 100;
+  if(rs.fastAutoRoll)  return 300;
+  if(rs.autoRoll)      return 1000;
+  if(rs.slowAutoRoll)  return 3000;
+  return null;
+}
+function getActiveAutoRollId(){
+  const rs=state.rebirthShop||{};
+  if(rs.omegaAutoRoll)  return 'omegaAutoRoll';
+  if(rs.ultraAutoRoll)  return 'ultraAutoRoll';
+  if(rs.fastAutoRoll)   return 'fastAutoRoll';
+  if(rs.autoRoll)       return 'autoRoll';
+  if(rs.slowAutoRoll)   return 'slowAutoRoll';
+  return null;
+}
+
+function toggleAutoRoll(){
+  state.autoRollEnabled = !(state.autoRollEnabled!==false);
+  save(); updateAutoRoll(); renderAll();
+  toast('Auto Roll '+(state.autoRollEnabled?'ON':'OFF'));
+}
+
+function toggleAutoRebirth(){
+  state.autoRebirthEnabled = !(state.autoRebirthEnabled!==false);
+  save(); renderAll();
+  toast('Auto Rebirth '+(state.autoRebirthEnabled?'ON':'OFF'));
+}
+
+let lastRebirthTime=0;
+function updateAutoRoll(){
+  if(autoRollTimer){clearInterval(autoRollTimer);autoRollTimer=null;}
+  if(autoRebirthTimer){clearInterval(autoRebirthTimer);autoRebirthTimer=null;}
+  isAutoRolling=false;
+
+  const delay=getAutoRollDelay();
+  if(delay!==null && state.autoRollEnabled!==false){
+    isAutoRolling=true;
+    autoRollTimer=setInterval(()=>{
+      doRoll();
+    }, delay);
+  }
+
+  const rs=state.rebirthShop||{};
+  if(rs.autoRebirth||rs.fastAutoRebirth){
+    const interval=rs.fastAutoRebirth?10:500;
+    const minGap=rs.fastAutoRebirth?100:2000;
+    autoRebirthTimer=setInterval(()=>{
+      if(state.autoRebirthEnabled!==false && canRebirth() && Date.now()-lastRebirthTime>minGap) doRebirth();
+    }, interval);
+  }
+}
+
+// ── TABS ──
+function switchTab(name){
+  const rs=state.rebirthShop||{};
+  if(name==='brewing'&&!(rs.unlockBrewing||rs.potionBrewing)) return;
+  const allTabs=['game','leaderboard','achievements','index','brewing'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',allTabs[i]===name));
+  ['tabGame','tabLeaderboard','tabAchievements','tabIndex','tabBrewing'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('active',allTabs[i]===name);
+  });
+  if(name==='leaderboard') lbFetch();
+  if(name==='achievements') renderAchievements();
+  if(name==='index'){renderCsIndex();fetchLiveFeed();}
+  if(name==='brewing') renderBrewing();
+}
+let activeLbTab='rolls';
+function switchLbTab(name){
+  activeLbTab=name;
+  document.querySelectorAll('.lb-sub-btn').forEach((b,i)=>b.classList.toggle('active',['rolls','coins','rebirths'][i]===name));
+  document.getElementById('lbBoardRolls').classList.toggle('active',name==='rolls');
+  document.getElementById('lbBoardCoins').classList.toggle('active',name==='coins');
+  document.getElementById('lbBoardRebirths').classList.toggle('active',name==='rebirths');
+}
+
+// ── RENDER ──
+function renderAll(){
+  const totalLuck=getTotalLuck();
+  document.getElementById('hudCoins').textContent=fmt(state.coins);
+  document.getElementById('hudRolls').textContent=fmt((state.ltRolls||0)+state.rolls);
+  document.getElementById('hudLuck').textContent=totalLuck+'%';
+  document.getElementById('hudRebirths').textContent=state.rebirths||0;
+  document.getElementById('hudTokens').textContent=state.rebirthTokens||0;
+  document.getElementById('rsTokenDisplay').textContent='('+fmt(state.rebirthTokens||0)+' \uD83D\uDC8E)';
+
+  const crown=document.getElementById('rebirthCrown');
+  if(state.rebirths>0){
+    const r=state.rebirths;
+    let starColor,starChar;
+    if(r>=1000)     {starColor='#ff00ff';starChar='\u2742';}
+    else if(r>=500) {starColor='#ffffff';starChar='\u2605';}
+    else if(r>=250) {starColor='#00ffff';starChar='\u2605';}
+    else if(r>=100) {starColor='#ff4444';starChar='\u2605';}
+    else if(r>=50)  {starColor='#e040fb';starChar='\u2605';}
+    else if(r>=25)  {starColor='#00e5ff';starChar='\u2605';}
+    else if(r>=15)  {starColor='#AAFF00';starChar='\u2605';}
+    else if(r>=10)  {starColor='#ff9800';starChar='\u2605';}
+    else if(r>=5)   {starColor='#f0c040';starChar='\u2605';}
+    else            {starColor='#aaaaaa';starChar='\u2605';}
+    const display=r<=20?starChar.repeat(r):starChar.repeat(5)+'...'+starChar.repeat(5)+' \xD7'+r;
+    crown.innerHTML='<span style="color:'+starColor+';filter:drop-shadow(0 0 6px '+starColor+'66)">'+display+'</span>';
+    crown.classList.add('show');
+  } else { crown.classList.remove('show'); }
+
+  const hEl=document.getElementById('statHighest');
+  hEl.textContent=state.highest||'\u2014';
+  hEl.className=state.highest?'s-val c-'+safeClass(state.highest):'s-val';
+  document.getElementById('statTotalCoins').textContent=fmt(getAllTimeCoins());
+  document.getElementById('statMythical').textContent=fmt((state.ltMythicals||0)+(state.mythicals||0));
+  document.getElementById('statLegendary').textContent=fmt((state.ltLegendaries||0)+(state.legendaries||0));
+  document.getElementById('statExotic').textContent=fmt((state.ltExotics||0)+(state.exotics||0));
+  document.getElementById('statUber').textContent=fmt((state.ltUbers||0)+(state.ubers||0));
+  document.getElementById('statSecret').textContent=fmt((state.ltSecrets||0)+(state.secrets||0));
+  document.getElementById('statMoai').textContent=fmt((state.ltMoais||0)+(state.moais||0));
+  const celEl=document.getElementById('statCelestial');
+  if(celEl) celEl.textContent=fmt((state.ltCelestials||0)+(state.celestials||0));
+  const voidEl=document.getElementById('statVoid');
+  if(voidEl) voidEl.textContent=fmt((state.ltVoids||0)+(state.voids||0));
+  document.getElementById('statTranscendent').textContent=fmt((state.ltTranscendents||0)+(state.transcendents||0));
+  document.getElementById('statUnknown').textContent=fmt((state.ltUnknowns||0)+(state.unknowns||0));
+  const cosEl=document.getElementById('statCosmic');
+  if(cosEl) cosEl.textContent=fmt((state.ltCelestialBrews||0)+' Brews');
+  // Update brewing tab button state
+  const brewBtn=document.getElementById('brewingTabBtn');
+  if(brewBtn){
+    const hasBrew=!!(state.rebirthShop&&(state.rebirthShop.unlockBrewing||state.rebirthShop.potionBrewing));
+    brewBtn.innerHTML=hasBrew?'\u2697\uFE0F Brewing':'\uD83D\uDD12 Brewing';
+    brewBtn.style.opacity=hasBrew?'1':'0.5';
+    brewBtn.style.cursor=hasBrew?'pointer':'default';
+  }
+
+  document.getElementById('potSmallCount').textContent='\xD7'+(state.potionsSmall||0);
+  document.getElementById('potMedCount').textContent='\xD7'+(state.potionsMedium||0);
+  document.getElementById('potLrgCount').textContent='\xD7'+(state.potionsLarge||0);
+  document.getElementById('potSmallBtn').disabled=(state.potionsSmall||0)<=0;
+  document.getElementById('potMedBtn').disabled=(state.potionsMedium||0)<=0;
+  document.getElementById('potLrgBtn').disabled=(state.potionsLarge||0)<=0;
+
+  const badge=document.getElementById('potionBadge');
+  if(state.potionRollsLeft>0){badge.textContent='\u2728 +'+state.potionLuckValue+'% luck \u2014 '+state.potionRollsLeft+' roll'+(state.potionRollsLeft!==1?'s':'')+' left';badge.classList.add('show');}
+  else badge.classList.remove('show');
+
+  document.getElementById('dcCount').textContent='\xD7'+(state.doubleCoinRolls||0);
+  document.getElementById('dcBtn').disabled=(state.doubleCoinRolls||0)<=0||state.dcActive;
+  const dcBadge=document.getElementById('dcBadge');
+  if(state.dcActive&&(state.doubleCoinRolls||0)>0){dcBadge.textContent='\uD83D\uDCB0 Double Coins \u2014 '+state.doubleCoinRolls+' roll'+(state.doubleCoinRolls!==1?'s':'')+' left';dcBadge.classList.add('show');}
+  else dcBadge.classList.remove('show');
+
+  const delay=getAutoRollDelay();
+  const ab=document.getElementById('autoBadge');
+  if(delay!==null){
+    const enabled=state.autoRollEnabled!==false;
+    ab.textContent='\u26A1 Auto Roll '+(enabled?'ON':'OFF')+' \u2014 '+(delay>=1000?delay/1000+'s':delay+'ms');
+    ab.style.opacity=enabled?'1':'0.5';
+    ab.classList.add('show');
+  } else ab.classList.remove('show');
+
+  const threshold=getRebirthThreshold();
+  const atc=getAllTimeCoins();
+  document.getElementById('rebirthReq').innerHTML='<span>'+fmt(threshold)+'</span> all-time coins (you have '+fmt(atc)+')';
+  document.getElementById('rebirthBtn').disabled=!canRebirth();
+  const perksEl=document.getElementById('rebirthPerks');
+  if(state.rebirths>0){
+    perksEl.innerHTML=
+      '<div class="rebirth-perk"><span class="rebirth-perk-name">&#x1F340; Luck</span><span class="rebirth-perk-val">+'+state.rebirthLuckBonus+'%</span></div>'+
+      '<div class="rebirth-perk"><span class="rebirth-perk-name">&#x1FA99; Coins</span><span class="rebirth-perk-val">+'+state.rebirthCoinBonus+'%</span></div>'+
+      '<div class="rebirth-perk"><span class="rebirth-perk-name">&#x1F48E; Tokens</span><span class="rebirth-perk-val">'+(state.rebirthTokens||0)+'</span></div>'+
+      '<div class="rebirth-perk"><span class="rebirth-perk-name">Next rebirth</span><span class="rebirth-perk-val">+'+(state.rebirths+1)*8+'% luck, +'+(state.rebirths+1)*10+'% coins</span></div>';
+  } else {
+    perksEl.innerHTML='<div class="rebirth-perk"><span class="rebirth-perk-name">First rebirth gives</span><span class="rebirth-perk-val">+8% luck &amp; +10% coins</span></div><div class="rebirth-perk"><span class="rebirth-perk-name">Plus</span><span class="rebirth-perk-val">+1 Rebirth Token</span></div>';
+  }
+
+  renderOdds(); renderShop(); renderRebirthShop(); renderHistory();
+}
+
+function renderOdds(){
+  const w=getWeights();
+  const total=w.reduce((a,b)=>a+b,0);
+  const maxPct=w[0]/total*100;
+  document.getElementById('oddsBar').innerHTML=RARITIES.map((r,i)=>{
+    const pct=w[i]/total*100;
+    const barW=maxPct>0?Math.min(pct/maxPct*100,100):0;
+    const pctStr=pct<0.0001?pct.toFixed(5)+'%':pct<0.001?pct.toFixed(4)+'%':pct<0.01?pct.toFixed(3)+'%':pct<0.1?pct.toFixed(2)+'%':pct.toFixed(1)+'%';
+    return '<div class="odds-row"><span class="odds-name c-'+safeClass(r)+'">'+r+'</span><div class="odds-track"><div class="odds-fill" style="width:'+barW+'%;background:'+COLORS[r]+';"></div></div><span class="odds-pct">'+pctStr+'</span></div>';
+  }).join('');
+}
+
+function renderShop(){
+  document.getElementById('shopGrid').innerHTML=SHOP_ITEMS.map(item=>{
+    const curLvl=state.upgrades[item.id]||0;
+    const isRep=item.repeatable===true;
+    const maxed=!isRep&&curLvl>=item.levels.length;
+    let btns='';
+    const btnClass=item.potionType==='small'?'potion-buy':item.potionType==='medium'?'med-buy':item.potionType==='large'?'lrg-buy':item.potionType==='dc'?'dc-buy':'';
+    if(isRep){
+      btns=item.levels.map((lv,i)=>'<button class="buy-btn '+btnClass+'" onclick="buyItem(\''+item.id+'\','+i+')" '+(state.coins<lv.cost?'disabled':'')+'><div>\uD83E\uDE99'+fmt(lv.cost)+'<br><small>'+lv.label+'</small></div></button>').join('');
+    } else if(maxed){
+      btns='<button class="buy-btn maxed" disabled>MAXED</button>';
+    } else {
+      const lv=item.levels[curLvl];
+      btns='<button class="buy-btn" onclick="buyItem(\''+item.id+'\','+curLvl+')" '+(state.coins<lv.cost?'disabled':'')+'><div>\uD83E\uDE99'+fmt(lv.cost)+'<br><small>'+lv.label+'</small></div></button>';
+    }
+    const lvlText=isRep?(item.potionType==='small'?'Have: '+(state.potionsSmall||0):item.potionType==='medium'?'Have: '+(state.potionsMedium||0):item.potionType==='large'?'Have: '+(state.potionsLarge||0):'Charges: '+(state.doubleCoinRolls||0)):maxed?'MAX LEVEL':'Level '+curLvl+'/'+item.levels.length+(curLvl<item.levels.length?' \u2014 Next: '+item.levels[curLvl].label:'');
+    return '<div class="shop-item"><div class="shop-item-icon">'+item.icon+'</div><div class="shop-item-info"><div class="shop-item-name">'+item.name+'</div><div class="shop-item-desc">'+item.desc+'</div><div class="shop-item-level">'+lvlText+'</div></div><div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;">'+btns+'</div></div>';
+  }).join('');
+}
+
+function renderRebirthShop(){
+  const tokens=state.rebirthTokens||0;
+  const rs=state.rebirthShop||{};
+  const hasAnyAutoRoll=rs.slowAutoRoll||rs.autoRoll||rs.fastAutoRoll||rs.ultraAutoRoll||rs.omegaAutoRoll;
+  const rollOn=state.autoRollEnabled!==false;
+  const rebirthOn=state.autoRebirthEnabled!==false;
+
+  document.getElementById('rebirthShopGrid').innerHTML=REBIRTH_SHOP_ITEMS.map(item=>{
+    const owned=!!rs[item.id];
+    let right='';
+    if(owned){
+      if(item.group==='autoRoll' && hasAnyAutoRoll && item.id===getActiveAutoRollId()){
+        // show toggle for the active auto roll tier
+        right='<button class="rs-toggle-btn '+(rollOn?'on':'')+'" onclick="toggleAutoRoll()">'+(rollOn?'ON':'OFF')+'</button>';
+      } else if(item.id==='autoRebirth'||item.id==='fastAutoRebirth'){
+        right='<button class="rs-toggle-btn '+(rebirthOn?'on':'')+'" onclick="toggleAutoRebirth()">'+(rebirthOn?'ON':'OFF')+'</button>';
+      } else {
+        right='<span class="rs-owned-tag">OWNED</span>';
+      }
+    } else {
+      right='<button class="rs-buy-btn" onclick="buyRebirthItem(\''+item.id+'\')" '+((tokens<item.cost)?'disabled':'')+'>&#x1F48E;'+item.cost+'</button>';
+    }
+    return '<div class="rs-item'+(owned?' owned':'')+'"><div class="rs-item-icon">'+item.icon+'</div><div class="rs-item-info"><div class="rs-item-name">'+item.name+'</div><div class="rs-item-desc">'+item.desc+'</div></div>'+right+'</div>';
+  }).join('');
+}
+
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(!state.history.length){list.innerHTML='<div style="color:#333;font-size:.72rem;text-align:center;padding:8px;font-style:italic;">No rolls yet...</div>';return;}
+  list.innerHTML=state.history.map((h,i)=>'<div class="history-item"><span class="history-num">#'+(state.rolls-i)+'</span><span class="c-'+safeClass(h.r)+'">'+h.r+'</span><span class="history-coins">+'+fmt(h.c)+'\uD83E\uDE99</span></div>').join('');
+}
+
+// ── PARTICLES ──
+function spawnParticles(color){
+  const cx=window.innerWidth/2,cy=window.innerHeight*.35;
+  const rank=RARITIES.indexOf(RARITIES.find(r=>COLORS[r]===color)||'Common');
+  const count=[0,0,12,14,16,20,24,28,32,40,50][rank]||12;
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');p.className='particle';
+    const size=3+Math.random()*7;
+    const angle=(Math.PI*2*i)/count+Math.random()*.5;
+    const dist=60+Math.random()*150;
+    p.style.cssText='left:'+cx+'px;top:'+cy+'px;width:'+size+'px;height:'+size+'px;background:'+color+';--tx:'+Math.cos(angle)*dist+'px;--ty:'+Math.sin(angle)*dist+'px;';
+    document.body.appendChild(p);setTimeout(()=>p.remove(),750);
+  }
+}
+
+// ── UTILS ──
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+}
+function fmt(n){
+  if(n>=1000000000) return (Math.floor(n/100000000)/10)+'B';
+  if(n>=1000000) return (Math.floor(n/100000)/10)+'M';
+  if(n>=1000) return (Math.floor(n/100)/10)+'k';
+  return n;
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function resetAll(){
+  if(!confirm('Reset EVERYTHING including rebirths and rebirth shop?')) return;
+  state=defaultState();
+  if(autoRollTimer){clearInterval(autoRollTimer);autoRollTimer=null;}
+  save();
+  document.getElementById('resultText').textContent='\u2014';
+  document.getElementById('resultText').className='result-rarity';
+  document.getElementById('resultSub').textContent='Press roll to begin your fate';
+  renderAll();toast('Everything reset.');
+}
+
+// ── ADMIN ──
+const ADMIN_PW='pneumonoultramicroscopicsilicovolcanoconiosis';
+let adminUnlocked=false;
+
+function openAdmin(){
+  document.getElementById('adminOverlay').classList.add('open');
+  if(adminUnlocked){
+    document.getElementById('adminLoginScreen').style.display='none';
+    document.getElementById('adminPanelScreen').style.display='flex';
+  } else {
+    document.getElementById('adminLoginScreen').style.cssText='display:flex;flex-direction:column;gap:14px;';
+    document.getElementById('adminPanelScreen').style.display='none';
+    document.getElementById('adminPwError').style.display='none';
+    document.getElementById('adminPwInput').value='';
+    setTimeout(()=>document.getElementById('adminPwInput').focus(),50);
+  }
+}
+function adminLogin(){
+  const pw=document.getElementById('adminPwInput').value;
+  if(pw===ADMIN_PW){
+    adminUnlocked=true;
+    document.getElementById('adminLoginScreen').style.display='none';
+    document.getElementById('adminPanelScreen').style.display='flex';
+  } else {
+    document.getElementById('adminPwError').style.display='block';
+    document.getElementById('adminPwInput').value='';
+    document.getElementById('adminPwInput').focus();
+  }
+}
+function closeAdmin(){ document.getElementById('adminOverlay').classList.remove('open'); }
+function adminAddCoins(){
+  const v=parseInt(document.getElementById('adminCoins').value)||0;
+  if(v<=0) return;
+  state.coins+=v;state.totalCoins+=v;
+  save();renderAll();toast('[Admin] +'+fmt(v)+' coins.');
+  document.getElementById('adminCoins').value='';
+}
+function adminAddLuck(){
+  const v=parseInt(document.getElementById('adminLuck').value)||0;
+  if(v<=0) return;
+  adminLuckBonus+=v;renderAll();toast('[Admin] +'+v+'% luck.');
+  document.getElementById('adminLuck').value='';
+}
+function adminForceRoll(){
+  const v=document.getElementById('adminRarity').value;
+  forcedRarity=v||null;closeAdmin();
+  toast(forcedRarity?'[Admin] Next roll: '+forcedRarity:'[Admin] Force cleared.');
+}
+document.getElementById('adminOverlay').addEventListener('click',function(e){if(e.target===this)closeAdmin();});
+
+// ── FIREBASE LEADERBOARD ──
+const FIREBASE_URL = 'https://rarityrng-38a63-default-rtdb.europe-west1.firebasedatabase.app';
+const FB = FIREBASE_URL;
+const LB_UID_KEY = 'rrUID';
+const LB_NAME_KEY = 'rrName';
+
+function getLbUID(){
+  let uid=localStorage.getItem(LB_UID_KEY);
+  if(!uid){ uid='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); localStorage.setItem(LB_UID_KEY,uid); }
+  return uid;
+}
+function getLbName(){ return localStorage.getItem(LB_NAME_KEY)||null; }
+
+function lbSetStatus(live){
+  const dot=document.getElementById('lbDot');
+  const txt=document.getElementById('lbStatusText');
+  if(dot) dot.classList.toggle('live',live);
+  if(txt) txt.textContent=live?'live':'offline';
+}
+
+function updateLbIdentityUI(){
+  const name=getLbName();
+  const pushBtn=document.getElementById('lbPushBtn');
+  const nameDisp=document.getElementById('lbNameDisplay');
+  const setBtn=document.getElementById('lbSetNameBtn');
+  if(name){
+    nameDisp.textContent=name;
+    setBtn.style.display='none';
+    if(pushBtn) pushBtn.disabled=false;
+  } else {
+    nameDisp.textContent='Set a name to appear on leaderboards';
+    setBtn.style.display='';
+    if(pushBtn) pushBtn.disabled=true;
+  }
+}
+
+function openNameModal(){
+  document.getElementById('nameModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nameInput').focus(),50);
+}
+function closeNameModal(){ document.getElementById('nameModal').classList.remove('open'); }
+function confirmName(){
+  const v=(document.getElementById('nameInput').value||'').trim().slice(0,20);
+  if(!v){document.getElementById('nameInput').focus();return;}
+  localStorage.setItem(LB_NAME_KEY,v);
+  closeNameModal();
+  updateLbIdentityUI();
+  toast('Name set: '+v+'!');
+  lbPushScore();
+}
+document.getElementById('nameModal').addEventListener('click',function(e){if(e.target===this)closeNameModal();});
+
+async function lbPushScore(){
+  const name=getLbName();
+  if(!name){openNameModal();return;}
+  const uid=getLbUID();
+  const payload={
+    name,
+    rolls:(state.ltRolls||0)+(state.rolls||0),
+    coins:getAllTimeCoins(),
+    rebirths:state.rebirths||0,
+    best:state.highest||'Common',
+    ts:Date.now(),
+  };
+  const btn=document.getElementById('lbPushBtn');
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  try{
+    const res=await fetch(FB+'/leaderboard/'+uid+'.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(btn){btn.textContent='\u2713 Saved';setTimeout(()=>{btn.disabled=false;btn.textContent='\u2B06 Push Score';},2000);}
+    toast('Score saved! \uD83C\uDFC6');
+    lbFetch();
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='\u2B06 Push Score';}
+    toast('Push failed: '+e.message);
+    lbSetStatus(false);
+  }
+}
+
+let lastAutoSubmit=0;
+function lbAutoSubmit(){
+  if(!getLbName()) return;
+  const now=Date.now();
+  if(now-lastAutoSubmit<60000) return;
+  lastAutoSubmit=now;
+  lbPushScore();
+}
+
+let lbCache=null;
+async function lbFetch(){
+  lbSetStatus(false);
+  try{
+    const res=await fetch(FB+'/leaderboard.json');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    lbSetStatus(true);
+    lbCache=data?Object.entries(data).map(([id,v])=>({id,...v})):[];
+    renderLbBoards(lbCache);
+  }catch(e){
+    lbSetStatus(false);
+    if(lbCache) renderLbBoards(lbCache);
+    else{
+      ['lbRowsRolls','lbRowsCoins','lbRowsRebirths'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.innerHTML='<div class="lb-empty">Could not reach Firebase.</div>';
+      });
+    }
+  }
+}
+
+function renderLbBoards(rows){
+  const myUID=getLbUID();
+  renderOneBoard('lbRowsRolls',rows,'rolls',myUID);
+  renderOneBoard('lbRowsCoins',rows,'coins',myUID);
+  renderOneBoard('lbRowsRebirths',rows,'rebirths',myUID);
+}
+
+function renderOneBoard(elId,rows,field,myUID){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  if(!rows||!rows.length){el.innerHTML='<div class="lb-empty">No entries yet — be the first!</div>';return;}
+  const sorted=[...rows].sort((a,b)=>(b[field]||0)-(a[field]||0)).slice(0,20);
+  const colStyle='grid-template-columns:32px 1fr auto auto;';
+  el.innerHTML=sorted.map((r,i)=>{
+    const isMe=r.id===myUID;
+    const medal=i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':'#'+(i+1);
+    const rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    const bestCls='c-'+safeClass(r.best||'Common');
+    return '<div class="lb-entry'+(isMe?' is-me':'')+'" style="'+colStyle+'">'
+      +'<span class="lb-rank-cell '+rankCls+'">'+medal+'</span>'
+      +'<span class="lb-name-cell">'+esc(r.name||'???')+(isMe?' <span style="color:#807040;font-size:.6rem;">(you)</span>':'')+'</span>'
+      +'<span class="lb-val-cell">'+fmt(r[field]||0)+'</span>'
+      +'<span class="lb-sub-cell '+bestCls+'">'+esc(r.best||'?')+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  updateLbIdentityUI();
+  lbFetch();
+  setInterval(lbFetch,30000);
+  checkVersion();
+  renderBrewing();
+});
+
+// ── ACHIEVEMENTS ──
+const ACHIEVEMENTS = [
+  // Rebirths
+  {id:'rebirth1',   cat:'Rebirths', icon:'&#x1F451;', name:'First Light',       desc:'Rebirth for the first time.',              check:s=>s.rebirths>=1},
+  {id:'rebirth5',   cat:'Rebirths', icon:'&#x1F451;', name:'Five Lives',         desc:'Reach 5 rebirths.',                        check:s=>s.rebirths>=5},
+  {id:'rebirth10',  cat:'Rebirths', icon:'&#x1F451;', name:'Ten Times Over',     desc:'Reach 10 rebirths.',                       check:s=>s.rebirths>=10},
+  {id:'rebirth25',  cat:'Rebirths', icon:'&#x1F451;', name:'Beyond Counting',    desc:'Reach 25 rebirths.',                       check:s=>s.rebirths>=25},
+  {id:'rebirth50',  cat:'Rebirths', icon:'&#x1F451;', name:'Half a Century',     desc:'Reach 50 rebirths.',                       check:s=>s.rebirths>=50},
+  {id:'rebirth100', cat:'Rebirths', icon:'&#x1F451;', name:'Centurion',          desc:'Reach 100 rebirths.',                      check:s=>s.rebirths>=100},
+  {id:'rebirth250', cat:'Rebirths', icon:'&#x1F451;', name:'Unrelenting',        desc:'Reach 250 rebirths.',                      check:s=>s.rebirths>=250},
+  {id:'rebirth500', cat:'Rebirths', icon:'&#x1F451;', name:'Boundless',          desc:'Reach 500 rebirths.',                      check:s=>s.rebirths>=500},
+  {id:'rebirth1000',cat:'Rebirths', icon:'&#x1F451;', name:'The Eternal Loop',   desc:'Reach 1000 rebirths.',                     check:s=>s.rebirths>=1000},
+  // Rolls
+  {id:'rolls100',   cat:'Rolls',    icon:'&#x1F3B2;', name:'Just Getting Started',desc:'Roll 100 times.',                         check:s=>(s.ltRolls||0)+(s.rolls||0)>=100},
+  {id:'rolls1k',    cat:'Rolls',    icon:'&#x1F3B2;', name:'On a Roll',           desc:'Roll 1,000 times.',                       check:s=>(s.ltRolls||0)+(s.rolls||0)>=1000},
+  {id:'rolls10k',   cat:'Rolls',    icon:'&#x1F3B2;', name:'Dedicated',           desc:'Roll 10,000 times.',                      check:s=>(s.ltRolls||0)+(s.rolls||0)>=10000},
+  {id:'rolls100k',  cat:'Rolls',    icon:'&#x1F3B2;', name:'Unstoppable',         desc:'Roll 100,000 times.',                     check:s=>(s.ltRolls||0)+(s.rolls||0)>=100000},
+  {id:'rolls1m',    cat:'Rolls',    icon:'&#x1F3B2;', name:'A Million Rolls',     desc:'Roll 1,000,000 times.',                   check:s=>(s.ltRolls||0)+(s.rolls||0)>=1000000},
+  // Rarities
+  {id:'firstLeg',   cat:'Rarities', icon:'&#x1F4DC;', name:'Something Good',      desc:'Roll your first Legendary.',              check:s=>(s.ltLegendaries||0)+(s.legendaries||0)>=1},
+  {id:'firstMyth',  cat:'Rarities', icon:'&#x1F525;', name:'Against All Odds',    desc:'Roll your first Mythical.',               check:s=>(s.ltMythicals||0)+(s.mythicals||0)>=1},
+  {id:'firstExotic',cat:'Rarities', icon:'&#x2728;',  name:'Out of Nowhere',      desc:'Roll your first Exotic.',                 check:s=>(s.ltExotics||0)+(s.exotics||0)>=1},
+  {id:'firstUber',  cat:'Rarities', icon:'&#x1F451;', name:'You Were Not Ready',  desc:'Roll your first Uber.',                   check:s=>(s.ltUbers||0)+(s.ubers||0)>=1},
+  {id:'firstSecret',cat:'Rarities', icon:'&#x1F910;', name:'Shhh...',             desc:'Roll your first Secret.',                 check:s=>(s.ltSecrets||0)+(s.secrets||0)>=1},
+  {id:'firstMoai',  cat:'Rarities', icon:'&#x1F5FF;', name:'Stone Faced',         desc:'Roll your first &#x1F5FF;.',              check:s=>(s.ltMoais||0)+(s.moais||0)>=1},
+  {id:'firstTrans', cat:'Rarities', icon:'&#x2747;',  name:'Beyond the Veil',     desc:'Roll your first Transcendent.',           check:s=>(s.ltTranscendents||0)+(s.transcendents||0)>=1},
+  {id:'firstUnk',   cat:'Rarities', icon:'&#x2753;',  name:'This Should Not Exist',desc:'Roll your first ???.',                   check:s=>(s.ltUnknowns||0)+(s.unknowns||0)>=1},
+  // Coins
+  {id:'coins1k',    cat:'Coins',    icon:'&#x1FA99;', name:'Pocket Change',       desc:'Earn 1,000 total coins.',                 check:s=>getAllTimeCoins()>=1000},
+  {id:'coins100k',  cat:'Coins',    icon:'&#x1FA99;', name:'Getting Wealthy',     desc:'Earn 100,000 total coins.',               check:s=>getAllTimeCoins()>=100000},
+  {id:'coins1m',    cat:'Coins',    icon:'&#x1FA99;', name:'Millionaire',         desc:'Earn 1,000,000 total coins.',             check:s=>getAllTimeCoins()>=1000000},
+  {id:'coins1b',    cat:'Coins',    icon:'&#x1FA99;', name:'Billionaire',         desc:'Earn 1,000,000,000 total coins.',         check:s=>getAllTimeCoins()>=1000000000},
+  // Pity
+  {id:'pityTrans',  cat:'Pity',     icon:'&#x23F3;',  name:'Long Time Coming',    desc:'Trigger the Transcendent pity at 10,000 rolls.', check:s=>false}, // set manually
+  {id:'pityUnk',    cat:'Pity',     icon:'&#x23F3;',  name:'Waiting Forever',     desc:'Trigger the ??? pity at 20,000 rolls.',   check:s=>false},
+];
+
+function checkAchievements(){
+  let any=false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements[a.id]) return;
+    if(a.check && a.check(state)){
+      state.achievements[a.id]=true;
+      any=true;
+      toast('&#x1F3C5; Achievement: '+a.name+'!');
+    }
+  });
+  if(any){ save(); if(document.getElementById('tabAchievements').classList.contains('active')) renderAchievements(); }
+}
+
+function renderAchievements(){
+  const cats=['Rebirths','Rolls','Rarities','Coins','Pity'];
+  const total=ACHIEVEMENTS.length;
+  const done=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
+  const prog=document.getElementById('achProgress');
+  if(prog) prog.textContent=done+' / '+total+' unlocked';
+
+  const grid=document.getElementById('achGrid');
+  if(!grid) return;
+  let html='';
+  cats.forEach(cat=>{
+    const items=ACHIEVEMENTS.filter(a=>a.cat===cat);
+    html+='<div class="ach-section-title">'+cat+'</div>';
+    items.forEach(a=>{
+      const unlocked=!!state.achievements[a.id];
+      html+='<div class="ach-item '+(unlocked?'unlocked':'locked')+'">'
+        +'<div class="ach-icon">'+a.icon+'</div>'
+        +'<div class="ach-info"><div class="ach-name">'+a.name+'</div><div class="ach-desc">'+a.desc+'</div></div>'
+        +'<div class="ach-badge '+(unlocked?'done':'todo')+'">'+(unlocked?'&#x2713; Done':'Locked')+'</div>'
+        +'</div>';
+    });
+  });
+  grid.innerHTML=html;
+}
+// ── CUTSCENES ──
+let csTimer=null;
+
+function playCutscene(rarity,earned,replay){
+  const cs=document.getElementById('cutscene');
+  if(!cs) return;
+  clearTimeout(csTimer);
+  if(rarity==='Transcendent'){
+    cs.className='active cs-transcendent';
+    const flavor=getFlavorText('Transcendent');
+    cs.innerHTML='<div class="cs-bg"></div><div class="cs-rays"></div><div id="csStars"></div>'
+      +'<div class="cs-title"><div class="cs-sub">YOU HAVE OBTAINED</div>'
+      +'<div class="cs-word">TRANSCENDENT</div>'
+      +'<div class="cs-coins">'+(replay?'Replaying':'+'+fmt(earned)+'\uD83E\uDE99')+'</div>'
+      +'<div class="cs-sub" style="font-size:.85rem;margin-top:4px;font-style:italic;">'+flavor+'</div></div>'
+      +'<div class="cs-skip">click anywhere to close</div>';
+    spawnCsStars('csStars','#ffd700');
+    csTimer=setTimeout(()=>closeCutscene(),10000);
+  } else if(rarity==='Void'){
+    cs.className='active cs-void';
+    const voidFlavor=getFlavorText('Void');
+    cs.innerHTML=
+      '<div class="cs-bg"></div>'
+      +'<div class="cs-vortex"></div>'
+      +'<div class="cs-accretion"></div>'
+      +'<div class="cs-accretion2"></div>'
+      +'<div class="cs-singularity"></div>'
+      +'<div class="cs-lightning"></div>'
+      +'<div class="cs-distort"></div>'
+      +'<div class="cs-ring" style="position:absolute;left:50%;top:50%;width:200px;height:200px;--dur:3s;--delay:0s;margin-left:-100px;margin-top:-100px;"></div>'
+      +'<div class="cs-ring" style="position:absolute;left:50%;top:50%;width:200px;height:200px;--dur:3s;--delay:0.6s;margin-left:-100px;margin-top:-100px;"></div>'
+      +'<div class="cs-ring" style="position:absolute;left:50%;top:50%;width:200px;height:200px;--dur:3s;--delay:1.2s;margin-left:-100px;margin-top:-100px;"></div>'
+      +'<div class="cs-ring" style="position:absolute;left:50%;top:50%;width:200px;height:200px;--dur:3s;--delay:1.8s;margin-left:-100px;margin-top:-100px;"></div>'
+      +'<div class="cs-ring" style="position:absolute;left:50%;top:50%;width:200px;height:200px;--dur:3s;--delay:2.4s;margin-left:-100px;margin-top:-100px;"></div>'
+      +'<div id="csVoidStars"></div>'
+      +'<div class="cs-title">'
+      +'<div class="cs-sub" style="color:rgba(124,0,224,.5);letter-spacing:.6em;font-size:.75rem;">YOU HAVE BEEN CONSUMED BY</div>'
+      +'<div class="cs-word">VOID</div>'
+      +'<div class="cs-coins">'+(replay?'Replaying':'+'+fmt(earned||COIN_REWARDS.Void)+'\uD83E\uDE99')+'</div>'
+      +'<div class="cs-sub" style="font-size:.8rem;margin-top:6px;font-style:italic;color:rgba(124,0,224,.6);">'+voidFlavor+'</div>'
+      +'</div>'
+      +'<div class="cs-skip" style="color:rgba(124,0,224,.4);">click anywhere to close</div>';
+    spawnVoidParticles('csVoidStars');
+    spawnCsStars('csVoidStars','#7c00e0');
+    csTimer=setTimeout(()=>closeCutscene(),12000);
+  } else {
+    // ??? cutscene
+    cs.className='active cs-unknown';
+    const hex=Math.floor(Math.random()*65535).toString(16).toUpperCase().padStart(4,'0');
+    const errs=['REALITY_OVERFLOW','NULL_EXISTENCE','UNDEFINED_FATE','VOID_BREACH','STACK_UNRAVELED'];
+    cs.innerHTML='<div class="cs-bg"></div><div class="cs-crack"></div><div class="cs-noise"></div><div class="cs-scanlines"></div>'
+      +'<div id="csGlitchLines"></div>'
+      +'<div class="cs-title">'
+      +'<div class="cs-sub" style="letter-spacing:.4em;font-size:.7rem;color:rgba(255,255,255,.35);font-family:monospace;">[ERR:0x'+hex+'] '+errs[Math.floor(Math.random()*errs.length)]+'</div>'
+      +'<div class="cs-word">???</div>'
+      +'<div class="cs-coins" style="font-family:monospace;font-size:.7rem;color:rgba(255,255,255,.3);">'+(replay?'// REPLAY':('// +'+fmt(earned)+'\uD83E\uDE99'))+'</div>'
+      +'<div class="cs-sub" style="font-size:.75rem;margin-top:8px;font-style:italic;">This was not meant to happen.</div>'
+      +'</div><div class="cs-skip">click anywhere to close</div>';
+    spawnGlitchLines();
+    csTimer=setTimeout(()=>closeCutscene(),10000);
+  }
+  if(!replay){
+    state.seenCutscenes=state.seenCutscenes||{};
+    state.seenCutscenes[rarity]=true;
+    save();
+    const idxTab=document.getElementById('tabIndex');
+    if(idxTab&&idxTab.classList.contains('active')) renderCsIndex();
+  }
+}
+
+function spawnCsStars(containerId,color){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  for(let i=0;i<60;i++){
+    const s=document.createElement('div');
+    s.className='cs-star';
+    const size=1+Math.random()*4;
+    const x=Math.random()*100,y=Math.random()*100;
+    const tx=(Math.random()-.5)*40,ty=(Math.random()-.5)*60;
+    const dur=(1.5+Math.random()*3).toFixed(1)+'s';
+    const delay=(Math.random()*2).toFixed(1)+'s';
+    const sc=(0.5+Math.random()*2).toFixed(2);
+    s.style.cssText='left:'+x+'%;top:'+y+'%;width:'+size+'px;height:'+size+'px;background:'+color
+      +';--tx:'+tx+'px;--ty:'+ty+'px;--dur:'+dur+';--delay:'+delay
+      +';--sc:'+sc+';--oa:'+(0.4+Math.random()*0.6).toFixed(2)
+      +';--ob:'+(Math.random()*0.3).toFixed(2)+';box-shadow:0 0 '+(size*3)+'px '+color+';';
+    el.appendChild(s);
+  }
+}
+
+function spawnVoidParticles(containerId){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  const cx=window.innerWidth/2, cy=window.innerHeight/2;
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div');
+    p.className='cs-void-particle';
+    const size=2+Math.random()*5;
+    const angle=(Math.PI*2*i)/40+Math.random()*.8;
+    const startDist=150+Math.random()*300;
+    const sx=cx+Math.cos(angle)*startDist;
+    const sy=cy+Math.sin(angle)*startDist;
+    const tx=-Math.cos(angle)*startDist;
+    const ty=-Math.sin(angle)*startDist;
+    const dur=(2+Math.random()*4).toFixed(1)+'s';
+    const delay=(Math.random()*3).toFixed(1)+'s';
+    const colors=['#7c00e0','#9000ff','#5000b0','#b040ff','#4a0090'];
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    p.style.cssText='left:'+sx+'px;top:'+sy+'px;width:'+size+'px;height:'+size+'px;background:'+col
+      +';box-shadow:0 0 '+(size*4)+'px '+col+';--tx:'+tx+'px;--ty:'+ty+'px;--dur:'+dur+';--delay:'+delay+';';
+    el.appendChild(p);
+  }
+}
+
+function closeCutscene(){
+  clearTimeout(csTimer);
+  const cs=document.getElementById('cutscene');
+  if(cs){cs.className='';cs.innerHTML='';}
+}
+
+function renderCsIndex(){
+  const grid=document.getElementById('csIndexGrid');
+  if(!grid) return;
+  const seen=state.seenCutscenes||{};
+  const tc=(state.ltTranscendents||0)+(state.transcendents||0);
+  const uc=(state.ltUnknowns||0)+(state.unknowns||0);
+  const vc=(state.ltVoids||0)+(state.voids||0);
+  const entries=[
+    {rarity:'Transcendent',cls:'trans-card',nameCls:'trans-name',icon:'&#x2747;',desc:'A golden explosion of light. Rays. Stars. Warmth.',count:tc,label:'Transcendents rolled'},
+    {rarity:'???',cls:'unk-card',nameCls:'unk-name',icon:'&#x2753;',desc:'Blackness. Cracks. A glitch in everything.',count:uc,label:'??? rolled'},
+    {rarity:'Void',cls:'void-card',nameCls:'void-name',icon:'&#x25FE;',desc:'A singularity. Everything is pulled inward. Nothing escapes.',count:vc,label:'Voids rolled'},
+  ];
+  grid.innerHTML=entries.map(e=>{
+    const unlocked=seen[e.rarity]||e.count>0;
+    const btn=unlocked
+      ?'<button class="cs-replay-btn" onclick="event.stopPropagation();playCutscene(\''+e.rarity+'\',0,true)">&#x25B6; Replay</button>'
+      :'<span class="cs-locked-tag">&#x1F512; Not yet</span>';
+    return '<div class="cs-index-card '+e.cls+'" onclick="'+(unlocked?'playCutscene(\''+e.rarity+'\',0,true)':'')+'"><div class="cs-index-icon">'+e.icon+'</div>'
+      +'<div class="cs-index-info"><div class="cs-index-name '+e.nameCls+'">'+e.rarity+'</div>'
+      +'<div class="cs-index-desc">'+e.desc+'</div>'
+      +'<div class="cs-index-count">'+e.count+' '+e.label+'</div></div>'+btn+'</div>';
+  }).join('');
+}
+
+// ── LIVE FEED ──
+async function pushLiveEvent(rarity){
+  const name=getLbName()||'Anonymous';
+  try{await fetch(FB+'/events.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,rarity,ts:Date.now()})});}catch(e){}
+}
+async function fetchLiveFeed(){
+  const list=document.getElementById('liveFeedList');if(!list)return;
+  try{
+    const res=await fetch(FB+'/events.json?orderBy="ts"&limitToLast=20');
+    if(!res.ok)throw new Error();
+    const data=await res.json();
+    if(!data){list.innerHTML='<div style="color:var(--muted);font-size:.72rem;font-style:italic;text-align:center;padding:12px;">No rare rolls yet.</div>';return;}
+    const events=Object.values(data).sort((a,b)=>b.ts-a.ts);
+    const now=Date.now();
+    list.innerHTML=events.map(ev=>{
+      const age=now-ev.ts;
+      const t=age<60000?Math.floor(age/1000)+'s ago':age<3600000?Math.floor(age/60000)+'m ago':Math.floor(age/3600000)+'h ago';
+      const isTrans=ev.rarity==='Transcendent';
+      const color=isTrans?'#ffd700':'#ffffff';
+      const stroke=isTrans?'':'-webkit-text-stroke:.7px #fff;';
+      return '<div class="live-entry '+(isTrans?'live-trans':'live-unk')+'"><span style="font-size:1rem">'+(isTrans?'&#x2747;':'&#x2753;')+'</span>'
+        +'<span class="live-who">'+esc(ev.name||'Anonymous')+'</span>'
+        +'<span class="live-what" style="color:'+color+';'+stroke+'">'+esc(ev.rarity)+'</span>'
+        +'<span class="live-when">'+t+'</span></div>';
+    }).join('');
+  }catch(e){if(list)list.innerHTML='<div style="color:var(--muted);font-size:.72rem;text-align:center;padding:12px;font-style:italic;">Could not load live feed.</div>';}
+}
+setInterval(()=>{const idx=document.getElementById('tabIndex');if(idx&&idx.classList.contains('active'))fetchLiveFeed();},15000);
+
+// ── POTION BREWING ──
+const BREW_RECIPES={
+  celestial:{
+    name:'Celestial Potion',icon:'\u2728',
+    requirements:{moais:5,ubers:5,exotics:10,rebirthTokens:500},
+    baseBrew:5*60*1000,     
+    minGreat:2.5*60*1000, minOk:4*60*1000,
+    reward:'ltCelestialBrews',
+  },
+  void:{
+    name:'Void Potion',icon:'\u25FE',
+    requirements:{rebirthTokens:100000,unknowns:5,transcendents:5,coins:10000000000,achievements:25,rolls:100000,celestialBrews:100},
+    baseBrew:12*60*60*1000,
+    minGreat:6*60*60*1000, minOk:9*60*60*1000,
+    reward:'ltVoidBrews',
+    grantsRoll:'Void',
+  }
+};
+
+function canBrew(id){
+  const r=BREW_RECIPES[id]; if(!r) return false;
+  const req=r.requirements;
+  if(req.moais        && ((state.ltMoais||0)+(state.moais||0))<req.moais) return false;
+  if(req.ubers        && ((state.ltUbers||0)+(state.ubers||0))<req.ubers) return false;
+  if(req.exotics      && ((state.ltExotics||0)+(state.exotics||0))<req.exotics) return false;
+  if(req.unknowns     && ((state.ltUnknowns||0)+(state.unknowns||0))<req.unknowns) return false;
+  if(req.transcendents&& ((state.ltTranscendents||0)+(state.transcendents||0))<req.transcendents) return false;
+  if(req.celestialBrews&&(state.ltCelestialBrews||0)<req.celestialBrews) return false;
+  if(req.rebirthTokens&&(state.rebirthTokens||0)<req.rebirthTokens) return false;
+  if(req.coins        && getAllTimeCoins()<req.coins) return false;
+  if(req.achievements && Object.keys(state.achievements||{}).length<req.achievements) return false;
+  if(req.rolls        && ((state.ltRolls||0)+(state.rolls||0))<req.rolls) return false;
+  return true;
+}
+
+function deductReq(key,ltKey,amount){
+  let n=amount;
+  const f=Math.min(n,state[ltKey]||0); state[ltKey]=(state[ltKey]||0)-f; n-=f;
+  if(n>0) state[key]=Math.max(0,(state[key]||0)-n);
+}
+
+function startBrew(id){
+  if(state.brewingPotion){toast('Already brewing!');return;}
+  if(!canBrew(id)){toast('Missing ingredients!');return;}
+  const r=BREW_RECIPES[id]; const req=r.requirements;
+  if(req.moais)         deductReq('moais','ltMoais',req.moais);
+  if(req.ubers)         deductReq('ubers','ltUbers',req.ubers);
+  if(req.exotics)       deductReq('exotics','ltExotics',req.exotics);
+  if(req.unknowns)      deductReq('unknowns','ltUnknowns',req.unknowns);
+  if(req.transcendents) deductReq('transcendents','ltTranscendents',req.transcendents);
+  if(req.celestialBrews) state.ltCelestialBrews=Math.max(0,(state.ltCelestialBrews||0)-req.celestialBrews);
+  if(req.rebirthTokens)  state.rebirthTokens=Math.max(0,(state.rebirthTokens||0)-req.rebirthTokens);
+  if(req.coins)          {state.coins=Math.max(0,state.coins-req.coins); state.totalCoins=Math.max(0,state.totalCoins-req.coins);}
+  state.brewingPotion=id; state.brewingStartTime=Date.now();
+  state.brewDurationMs=r.baseBrew; state.minigameDone=false;
+  save(); renderAll(); renderBrewing();
+  toast('\u2697\uFE0F '+r.name+' started! Play the minigame to speed it up.');
+}
+
+function claimBrew(){
+  if(!state.brewingPotion) return;
+  const r=BREW_RECIPES[state.brewingPotion];
+  const dur=state.brewDurationMs||r.baseBrew;
+  if(Date.now()-(state.brewingStartTime||0)<dur){toast('Not ready yet!');return;}
+  if(r.reward) state[r.reward]=(state[r.reward]||0)+1;
+  state.brewingPotion=null; state.brewingStartTime=null; state.brewDurationMs=null; state.minigameDone=false;
+  if(r.grantsRoll){
+    state.nextRollForced=r.grantsRoll;
+    save(); renderAll(); renderBrewing();
+    playCutscene(r.grantsRoll, COIN_REWARDS[r.grantsRoll]||0, false);
+    toast('\u25FE Void Potion ready! Your next roll is VOID.');
+  } else {
+    save(); renderAll(); renderBrewing();
+    spawnParticles('#c080f0');
+    toast('\u2728 Celestial Potion claimed! +1 Celestial Brew recorded.');
+  }
+}
+
+// ── BREWING MINIGAME ──
+let mgInterval=null;
+let mgZoneDir=1, mgZonePos=50, mgBarPos=0, mgBarDir=1, mgDone=false;
+
+function startMinigame(){
+  if(!state.brewingPotion||state.minigameDone) return;
+  const overlay=document.getElementById('mgOverlay');
+  if(overlay) overlay.style.display='flex';
+  mgZonePos=25+Math.random()*50; mgBarPos=0; mgBarDir=1; mgDone=false;
+  // Set zone position
+  const zoneEl=document.getElementById('mgZone');
+  if(zoneEl) zoneEl.style.left=(mgZonePos-7.5)+'%';
+  clearInterval(mgInterval);
+  mgInterval=setInterval(()=>{
+    mgBarPos+=mgBarDir*2;
+    if(mgBarPos>=100||mgBarPos<=0) mgBarDir*=-1;
+    const bar=document.getElementById('mgBar');
+    if(bar) bar.style.left=Math.min(98,mgBarPos)+'%';
+  },16);
+}
+
+function stopMinigame(){
+  if(mgDone) return;
+  mgDone=true;
+  clearInterval(mgInterval);
+  const overlay=document.getElementById('mgOverlay');
+  if(overlay) overlay.style.display='none';
+  if(!state.brewingPotion) return;
+  const r=BREW_RECIPES[state.brewingPotion];
+  const dist=Math.abs(mgBarPos-mgZonePos);
+  let newDur,quality;
+  if(dist<=8)      {quality='great'; newDur=r.minGreat;}
+  else if(dist<=20){quality='ok';    newDur=r.minOk;}
+  else             {quality='miss';  newDur=r.baseBrew;}
+  if(!state.minigameDone||(state.brewDurationMs||r.baseBrew)>newDur){
+    state.brewDurationMs=newDur;
+  }
+  state.minigameDone=true;
+  const labels={great:'Perfect! Brew time cut to minimum.',ok:'Good! Brew time partially reduced.',miss:'Missed. Brew time unchanged.'};
+  save(); renderBrewing();
+  toast('\uD83C\uDFAF '+labels[quality]);
+}
+
+// Space key triggers minigame click
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&document.getElementById('mgOverlay')?.style.display==='flex'){
+    e.preventDefault(); stopMinigame(); return;
+  }
+  if((e.code==='Space'||e.code==='Enter')&&!document.getElementById('rollBtn').disabled){
+    e.preventDefault(); doRoll();
+  }
+});
+
+function renderBrewing(){
+  const rs=state.rebirthShop||{};
+  const locked=document.getElementById('brewingLockedPanel');
+  const unlocked=document.getElementById('brewingUnlockedPanel');
+  if(!locked||!unlocked) return;
+  const hasBrew=rs.potionBrewing||rs.unlockBrewing;
+  if(!hasBrew){locked.style.display='block';unlocked.style.display='none';return;}
+  locked.style.display='none'; unlocked.style.display='flex';
+
+  // Celestial potion card
+  const celCard=document.getElementById('brewCelestialCard');
+  const voidCard=document.getElementById('brewVoidCard');
+
+  function renderCard(cardEl,id){
+    if(!cardEl) return;
+    const r=BREW_RECIPES[id];
+    const req=r.requirements;
+    const isBrewing=state.brewingPotion===id;
+    const isOtherBrewing=state.brewingPotion&&state.brewingPotion!==id;
+    // Requirements display
+    const reqEl=cardEl.querySelector('.brew-reqs');
+    if(reqEl){
+      let rows=[];
+      if(req.moais)         rows.push({l:'\uD83D\uDDFF',n:req.moais,h:(state.ltMoais||0)+(state.moais||0)});
+      if(req.ubers)         rows.push({l:'Ubers',n:req.ubers,h:(state.ltUbers||0)+(state.ubers||0)});
+      if(req.exotics)       rows.push({l:'Exotics',n:req.exotics,h:(state.ltExotics||0)+(state.exotics||0)});
+      if(req.unknowns)      rows.push({l:'???',n:req.unknowns,h:(state.ltUnknowns||0)+(state.unknowns||0)});
+      if(req.transcendents) rows.push({l:'Transcendents',n:req.transcendents,h:(state.ltTranscendents||0)+(state.transcendents||0)});
+      if(req.celestialBrews)rows.push({l:'Celestial Brews',n:req.celestialBrews,h:state.ltCelestialBrews||0});
+      if(req.rebirthTokens) rows.push({l:'Tokens',n:fmt(req.rebirthTokens),h:fmt(state.rebirthTokens||0),ok:(state.rebirthTokens||0)>=req.rebirthTokens});
+      if(req.coins)         rows.push({l:'Coins',n:fmt(req.coins),h:fmt(getAllTimeCoins()),ok:getAllTimeCoins()>=req.coins});
+      if(req.achievements)  rows.push({l:'Achievements',n:req.achievements,h:Object.keys(state.achievements||{}).length});
+      if(req.rolls)         rows.push({l:'Rolls',n:fmt(req.rolls),h:fmt((state.ltRolls||0)+(state.rolls||0))});
+      reqEl.innerHTML=rows.map(row=>{
+        const ok=row.ok!==undefined?row.ok:(row.h>=row.n);
+        return '<div class="brew-req"><span class="brew-req-label">'+row.l+'</span><span class="brew-req-val '+(ok?'ok':'bad')+'">'+row.h+' / '+row.n+'</span></div>';
+      }).join('');
+    }
+    // Status
+    const statusEl=cardEl.querySelector('.brew-status');
+    const startBtn=cardEl.querySelector('.brew-start-btn');
+    const claimBtn=cardEl.querySelector('.brew-claim-btn');
+    const mgBtn=cardEl.querySelector('.brew-mg-btn');
+    if(!statusEl||!startBtn||!claimBtn) return;
+    if(isBrewing){
+      const dur=state.brewDurationMs||r.baseBrew;
+      const remaining=Math.max(0,dur-(Date.now()-(state.brewingStartTime||0)));
+      if(remaining<=0){
+        statusEl.textContent='\u2728 Done! Claim your potion.'; statusEl.style.display='block';
+        startBtn.style.display='none'; claimBtn.style.display='block';
+        if(mgBtn) mgBtn.style.display='none';
+      } else {
+        const h=Math.floor(remaining/3600000),m=Math.floor((remaining%3600000)/60000),s=Math.floor((remaining%60000)/1000);
+        const timeStr=h>0?h+'h '+m+'m':m+'m '+s+'s';
+        const pct=Math.round((1-remaining/r.baseBrew)*100);
+        statusEl.innerHTML='\u23F1\uFE0F Brewing\u2026 '+timeStr+' left'+(state.minigameDone?' ('+pct+'% reduced)':'');
+        statusEl.style.display='block';
+        startBtn.style.display='none'; claimBtn.style.display='none';
+        if(mgBtn) mgBtn.style.display=state.minigameDone?'none':'block';
+        setTimeout(()=>{const t=document.getElementById('tabBrewing');if(t&&t.classList.contains('active'))renderBrewing();},1000);
+      }
+    } else {
+      statusEl.style.display='none';
+      startBtn.style.display=isOtherBrewing?'none':'block';
+      claimBtn.style.display='none';
+      if(mgBtn) mgBtn.style.display='none';
+      if(startBtn) startBtn.disabled=!canBrew(id)||!!isOtherBrewing;
+    }
+    // Count
+    const countEl=cardEl.querySelector('.brew-count');
+    if(countEl){
+      const count=id==='celestial'?(state.ltCelestialBrews||0):(state.ltVoidBrews||0);
+      countEl.textContent=fmt(count);
+    }
+  }
+  renderCard(celCard,'celestial');
+  renderCard(voidCard,'void');
+}
+
+// ── VERSION CHECK ──
+const GAME_VERSION=1.5;
+function checkVersion(){
+  const stored=parseFloat(localStorage.getItem('rrVersion')||'0');
+  if(stored>0&&stored<GAME_VERSION){
+    const banner=document.getElementById('updateBanner');
+    if(banner){document.getElementById('bannerVersion').textContent=GAME_VERSION.toFixed(1);banner.style.display='flex';}
+  }
+  localStorage.setItem('rrVersion',GAME_VERSION.toFixed(1));
+}
+
+const THEME_KEY = 'rrTheme';
+
+const THEME_MODES = [
+  {id:'dark',     label:'Dark',      vars:{'--bg':'#080810','--panel':'#0f0f1a','--panel2':'#13131f','--border':'#1e1e30','--border2':'#2a2a3e','--text':'#d8d8f0','--muted':'#4a4a68'}},
+  {id:'darker',   label:'Void',      vars:{'--bg':'#020205','--panel':'#080810','--panel2':'#0d0d16','--border':'#151525','--border2':'#202030','--text':'#c8c8e8','--muted':'#3a3a55'}},
+  {id:'midnight', label:'Midnight',  vars:{'--bg':'#050d18','--panel':'#0a1628','--panel2':'#0e1e35','--border':'#162238','--border2':'#1e304a','--text':'#c8d8f0','--muted':'#3a5068'}},
+  {id:'forest',   label:'Forest',    vars:{'--bg':'#050e08','--panel':'#0a1810','--panel2':'#0d1e14','--border':'#162818','--border2':'#1e3820','--text':'#c8e8d0','--muted':'#3a5840'}},
+  {id:'blood',    label:'Blood',     vars:{'--bg':'#0e0404','--panel':'#1a0808','--panel2':'#200c0c','--border':'#2e1010','--border2':'#3e1818','--text':'#f0d0d0','--muted':'#6a3838'}},
+  {id:'sunset',   label:'Sunset',    vars:{'--bg':'#0e0808','--panel':'#1a0e10','--panel2':'#201218','--border':'#301820','--border2':'#402030','--text':'#f0d8c8','--muted':'#6a4848'}},
+  {id:'neon',     label:'Neon',      vars:{'--bg':'#020208','--panel':'#080818','--panel2':'#0c0c20','--border':'#141430','--border2':'#1e1e40','--text':'#e0f0ff','--muted':'#3a3a70'}},
+  {id:'arctic',   label:'Arctic',    vars:{'--bg':'#080e18','--panel':'#101828','--panel2':'#162030','--border':'#1e2e40','--border2':'#283850','--text':'#d0e8f8','--muted':'#405868'}},
+  {id:'sakura',   label:'Sakura',    vars:{'--bg':'#100808','--panel':'#1e1018','--panel2':'#261420','--border':'#341828','--border2':'#422030','--text':'#f8d8e8','--muted':'#684858'}},
+  {id:'abyss',    label:'Abyss',     vars:{'--bg':'#000008','--panel':'#04040e','--panel2':'#060612','--border':'#0c0c1e','--border2':'#10102a','--text':'#a0a0d0','--muted':'#303050'}},
+  {id:'light',    label:'Light',     vars:{'--bg':'#f0f0f8','--panel':'#ffffff','--panel2':'#f4f4fc','--border':'#dddde8','--border2':'#ccccdd','--text':'#1a1a2e','--muted':'#7a7a9a'}},
+  {id:'parchment',label:'Parchment', vars:{'--bg':'#f5f0e0','--panel':'#fdf8ec','--panel2':'#f8f2e0','--border':'#d8c898','--border2':'#c8b888','--text':'#2a1a08','--muted':'#8a6a40'}},
+];
+
+const THEME_ACCENTS = [
+  {id:'gold',   label:'Gold',   color:'#f0c040'},
+  {id:'purple', label:'Purple', color:'#9c60f0'},
+  {id:'blue',   label:'Blue',   color:'#4090f0'},
+  {id:'cyan',   label:'Cyan',   color:'#20c8e0'},
+  {id:'green',  label:'Green',  color:'#40c060'},
+  {id:'pink',   label:'Pink',   color:'#f060a0'},
+  {id:'red',    label:'Red',    color:'#f05050'},
+  {id:'orange', label:'Orange', color:'#f08030'},
+  {id:'white',  label:'White',  color:'#e0e0f0'},
+];
+
+const THEME_FONTS = [
+  {id:'crimson', label:'Crimson',   css:"'Crimson Pro', serif",      sample:'Serif'},
+  {id:'cinzel',  label:'Cinzel',    css:"'Cinzel', serif",            sample:'Classic'},
+  {id:'mono',    label:'Monospace', css:"'Courier New', monospace",   sample:'Mono'},
+  {id:'system',  label:'System',    css:"-apple-system, sans-serif",  sample:'Clean'},
+  {id:'comic',   label:'Comic',     css:"'Comic Sans MS', cursive",   sample:'Fun'},
+];
+
+function defaultTheme(){ return {mode:'dark',accent:'gold',font:'crimson'}; }
+function loadTheme(){ try{return {...defaultTheme(),...JSON.parse(localStorage.getItem(THEME_KEY)||'{}')};}catch{return defaultTheme();} }
+function saveTheme(t){ localStorage.setItem(THEME_KEY,JSON.stringify(t)); }
+let currentTheme=loadTheme();
+
+function applyTheme(){
+  const root=document.documentElement.style;
+  const mode=THEME_MODES.find(m=>m.id===currentTheme.mode)||THEME_MODES[0];
+  Object.entries(mode.vars).forEach(([k,v])=>root.setProperty(k,v));
+
+  const accent=THEME_ACCENTS.find(a=>a.id===currentTheme.accent)||THEME_ACCENTS[0];
+  root.setProperty('--gold',accent.color);
+  const h1=document.querySelector('h1');
+  if(h1){ const c=accent.color; h1.style.backgroundImage='linear-gradient(135deg,'+shadeColor(c,-30)+','+c+','+shadeColor(c,-30)+')'; }
+
+  // Inject a style tag to override ALL font-family declarations everywhere
+  const font=THEME_FONTS.find(f=>f.id===currentTheme.font)||THEME_FONTS[0];
+  let styleEl=document.getElementById('themeFont');
+  if(!styleEl){ styleEl=document.createElement('style'); styleEl.id='themeFont'; document.head.appendChild(styleEl); }
+  styleEl.textContent='*{font-family:'+font.css+' !important;}';
+}
+
+function shadeColor(hex,pct){
+  const n=parseInt(hex.replace('#',''),16);
+  const r=Math.min(255,Math.max(0,((n>>16)&0xff)+Math.round(pct*2.55)));
+  const g=Math.min(255,Math.max(0,((n>>8)&0xff)+Math.round(pct*2.55)));
+  const b=Math.min(255,Math.max(0,(n&0xff)+Math.round(pct*2.55)));
+  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function openTheme(){ renderThemeModal(); document.getElementById('themeOverlay').classList.add('open'); }
+function closeTheme(){ document.getElementById('themeOverlay').classList.remove('open'); }
+
+function renderThemeModal(){
+  document.getElementById('themeModeRows').innerHTML=THEME_MODES.map(m=>
+    '<div class="theme-radio-row" onclick="setThemeMode(\''+m.id+'\')">'
+    +'<div class="theme-radio-dot '+(currentTheme.mode===m.id?'checked':'')+'"></div>'
+    +'<span class="theme-radio-label">'+m.label+'</span></div>').join('');
+  document.getElementById('themeSwatches').innerHTML=THEME_ACCENTS.map(a=>
+    '<div class="theme-swatch '+(currentTheme.accent===a.id?'active':'')+'" '
+    +'style="background:'+a.color+';box-shadow:0 0 8px '+a.color+'66;" '
+    +'onclick="setThemeAccent(\''+a.id+'\')" title="'+a.label+'"></div>').join('');
+  document.getElementById('themeFontRows').innerHTML=THEME_FONTS.map(f=>
+    '<button class="theme-font-opt '+(currentTheme.font===f.id?'active':'')+'" '
+    +'style="font-family:'+f.css+'" onclick="setThemeFont(\''+f.id+'\')">'
+    +f.label+' <span style="opacity:.5;font-size:.7rem;float:right;">'+f.sample+'</span></button>').join('');
+}
+
+function setThemeMode(id){ currentTheme.mode=id; saveTheme(currentTheme); applyTheme(); renderThemeModal(); }
+function setThemeAccent(id){ currentTheme.accent=id; saveTheme(currentTheme); applyTheme(); renderThemeModal(); }
+function setThemeFont(id){ currentTheme.font=id; saveTheme(currentTheme); applyTheme(); renderThemeModal(); }
+
+document.addEventListener('DOMContentLoaded', function(){
+  updateAutoRoll();
+  applyTheme();
+  renderAll();
+  checkAchievements();
+  checkVersion();
+  renderBrewing();
+});
+</script>
+</body>
+</html>
