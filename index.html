@@ -404,6 +404,26 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
 #versionBanner .vb-text{display:flex;align-items:center;gap:8px;}
 #versionBanner .vb-close{background:transparent;border:1px solid #5030a0;color:#9060c0;font-family:'Cinzel',serif;font-size:.6rem;padding:5px 10px;border-radius:5px;cursor:pointer;transition:all .2s;}
 #versionBanner .vb-close:hover{border-color:#a060d0;color:#c080e0;}
+
+/* admin ban controls */
+.admin-ban-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.admin-ban-row button{flex:1;min-width:60px;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:6px 4px;border-radius:5px;cursor:pointer;border:1px solid;text-transform:uppercase;transition:all .2s;}
+.admin-ban-row button:hover{filter:brightness(1.3);}
+.admin-ban-row button:disabled{opacity:.4;cursor:not-allowed;}
+.bb-hide{background:#1a1a08;border-color:#807030;color:#d4c060;}
+.bb-block{background:#2a1408;border-color:#a05020;color:#e08040;}
+.bb-full{background:#2a0808;border-color:#a02020;color:#ff5040;}
+.bb-wipe{background:#08081a;border-color:#3050a0;color:#6080ff;}
+.bb-unban{background:#082010;border-color:#206040;color:#40b070;}
+.admin-status-tag{display:inline-block;font-size:.5rem;padding:2px 6px;border-radius:4px;margin-left:6px;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase;}
+.tag-hide{background:#1a1a08;color:#d4c060;border:1px solid #807030;}
+.tag-block{background:#2a1408;color:#e08040;border:1px solid #a05020;}
+.tag-full{background:#2a0808;color:#ff5040;border:1px solid #a02020;}
+.tag-wipe{background:#08081a;color:#6080ff;border:1px solid #3050a0;}
+#bannedScreen{position:fixed;inset:0;background:#000;color:#f44336;z-index:99999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:30px;font-family:'Cinzel',serif;}
+#bannedScreen.show{display:flex;}
+#bannedScreen h1{font-family:'Cinzel Decorative',cursive;font-size:2rem;color:#f44336;letter-spacing:.15em;}
+#bannedScreen p{color:#a04040;font-size:.9rem;max-width:500px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -719,6 +739,7 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
 </div>
 
 <!-- Admin -->
+<div id="bannedScreen"><h1>&#x1F6AB; You are banned</h1><p id="bannedReason">You have been banned from Rarity Roller. Your save has been wiped.</p></div>
 <button id="adminBtn" onclick="openAdmin()">&#x2699;</button>
 <div id="adminOverlay">
   <div id="adminModal">
@@ -792,6 +813,18 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
           <button class="admin-close" onclick="adminCancelEdit()" style="flex:1;">Cancel</button>
         </div>
         <button class="admin-apply-btn" onclick="adminDeletePlayer()" style="margin-top:6px;border-color:#f44336;color:#f44336;width:100%;font-size:.55rem;">Delete Player</button>
+        <div style="margin-top:10px;">
+          <label class="admin-lbl" style="font-size:.55rem;">Status: <span id="adminEditStatus" style="color:#c060f0;">—</span></label>
+          <div class="admin-ban-row">
+            <button class="bb-hide"  onclick="adminBan('hide')"  title="Hide from leaderboard only">Hide</button>
+            <button class="bb-block" onclick="adminBan('block')" title="Block from submitting + remove entry">Block</button>
+            <button class="bb-full"  onclick="adminBan('full')"  title="Block + hide + wipe their save">Full Ban</button>
+          </div>
+          <div class="admin-ban-row" style="margin-top:4px;">
+            <button class="bb-wipe"  onclick="adminWipe()"  title="Wipe their localStorage on next load">Wipe Save</button>
+            <button class="bb-unban" onclick="adminUnban()" title="Remove all bans + wipe flags">Unban / Clear</button>
+          </div>
+        </div>
         <hr class="admin-divider"/>
       </div>
       <button class="admin-close" onclick="closeAdmin()">Close</button>
@@ -1488,6 +1521,7 @@ function resetAll(){
 // ── ADMIN ──
 const ADMIN_HASH='e59a962210e6a777087dc135d508d0b2d2371647f138a300bb0b8a852aef7fda';
 let adminUnlocked=false;
+let adminPwPlain='';
 async function hashPw(pw){
   const enc=new TextEncoder().encode(pw);
   const buf=await crypto.subtle.digest('SHA-256',enc);
@@ -1511,7 +1545,7 @@ async function adminLogin(){
   const pw=document.getElementById('adminPwInput').value;
   const h=await hashPw(pw);
   if(h===ADMIN_HASH){
-    adminUnlocked=true;
+    adminUnlocked=true; adminPwPlain=pw;
     document.getElementById('adminLoginScreen').style.display='none';
     document.getElementById('adminPanelScreen').style.display='flex';
     adminLoadPlayers();
@@ -1621,6 +1655,137 @@ async function adminDeletePlayer(){
 // ── FIREBASE LEADERBOARD ──
 const FIREBASE_URL = 'https://rarityrng-38a63-default-rtdb.europe-west1.firebasedatabase.app';
 const FB = FIREBASE_URL;
+
+
+// ── BAN / WIPE SYSTEM ──
+async function adminFetchStatus(uid){
+  try{
+    const [b,w]=await Promise.all([
+      fetch(FB+'/bans/'+uid+'.json').then(r=>r.json()),
+      fetch(FB+'/wipes/'+uid+'.json').then(r=>r.json())
+    ]);
+    return {ban:b||null, wipe:!!(w&&w.wipe)};
+  }catch(e){ return {ban:null,wipe:false}; }
+}
+async function adminWriteBan(uid, level){
+  if(!adminPwPlain){ toast('[Admin] Re-login required.'); return false; }
+  const payload = level ? {level, ts:Date.now(), pw:adminPwPlain} : null;
+  const res = await fetch(FB+'/bans/'+uid+'.json',{
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){ toast('[Admin] Ban failed: '+res.status); return false; }
+  return true;
+}
+async function adminWriteWipe(uid, on){
+  if(!adminPwPlain){ toast('[Admin] Re-login required.'); return false; }
+  const payload = on ? {wipe:true, ts:Date.now(), pw:adminPwPlain} : null;
+  const res = await fetch(FB+'/wipes/'+uid+'.json',{
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){ toast('[Admin] Wipe write failed: '+res.status); return false; }
+  return true;
+}
+async function adminBan(level){
+  const uid=document.getElementById('adminEditUID').value;
+  const p=adminPlayers.find(x=>x.id===uid); if(!p) return;
+  if(!confirm('Apply "'+level.toUpperCase()+'" ban to '+p.name+'?')) return;
+  const ok=await adminWriteBan(uid, level);
+  if(!ok) return;
+  // For block/full, also remove their leaderboard entry
+  if(level==='block'||level==='full'){
+    await fetch(FB+'/leaderboard/'+uid+'.json',{method:'DELETE'});
+  }
+  // For full, also flag wipe
+  if(level==='full'){ await adminWriteWipe(uid,true); }
+  toast('[Admin] '+level.toUpperCase()+' ban applied to '+p.name+'.');
+  adminLoadPlayers(); lbFetch(); refreshAdminStatusTag(uid);
+}
+async function adminWipe(){
+  const uid=document.getElementById('adminEditUID').value;
+  const p=adminPlayers.find(x=>x.id===uid); if(!p) return;
+  if(!confirm('Wipe '+p.name+"'s save on their next visit?")) return;
+  const ok=await adminWriteWipe(uid,true);
+  if(ok){ toast('[Admin] Wipe scheduled for '+p.name+'.'); refreshAdminStatusTag(uid); }
+}
+async function adminUnban(){
+  const uid=document.getElementById('adminEditUID').value;
+  const p=adminPlayers.find(x=>x.id===uid); if(!p) return;
+  if(!confirm('Remove all bans + wipe flags from '+p.name+'?')) return;
+  const a=await adminWriteBan(uid,null);
+  const b=await adminWriteWipe(uid,false);
+  if(a&&b){ toast('[Admin] '+p.name+' fully cleared.'); refreshAdminStatusTag(uid); adminLoadPlayers(); lbFetch(); }
+}
+async function refreshAdminStatusTag(uid){
+  const el=document.getElementById('adminEditStatus'); if(!el) return;
+  const s=await adminFetchStatus(uid);
+  let html='clean';
+  if(s.ban&&s.ban.level) html='<span class="admin-status-tag tag-'+s.ban.level+'">'+s.ban.level+'</span>';
+  if(s.wipe) html+='<span class="admin-status-tag tag-wipe">wipe</span>';
+  el.innerHTML=html;
+}
+
+// hook into existing edit flow
+const _origAdminEditPlayer = adminEditPlayer;
+adminEditPlayer = function(uid){ _origAdminEditPlayer(uid); refreshAdminStatusTag(uid); };
+
+// ── PLAYER-SIDE: check ban/wipe on load + before each push ──
+let myBanState = {ban:null, wipe:false};
+async function checkMyStatus(){
+  const uid=getLbUID();
+  myBanState = await adminFetchStatus(uid);
+  if(myBanState.wipe){
+    // Wipe local save, clear UID so they get a fresh one if they return
+    try{
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(LB_NAME_KEY);
+      // Acknowledge wipe so we don't loop forever
+      await fetch(FB+'/wipes/'+uid+'.json',{method:'DELETE'}).catch(()=>{});
+    }catch(e){}
+  }
+  if(myBanState.ban && (myBanState.ban.level==='full')){
+    document.getElementById('bannedScreen').classList.add('show');
+  }
+}
+function isBlockedFromSubmit(){
+  return !!(myBanState.ban && (myBanState.ban.level==='block' || myBanState.ban.level==='full'));
+}
+
+// Wrap lbPushScore to enforce client-side block
+const _origLbPushScore = lbPushScore;
+lbPushScore = async function(){
+  // Re-check status fresh in case admin just banned them
+  await checkMyStatus();
+  if(isBlockedFromSubmit()){
+    toast('You are banned from the leaderboard.');
+    return;
+  }
+  return _origLbPushScore.apply(this, arguments);
+};
+
+// Filter banned/hidden entries out of leaderboard view
+let bannedIdSet = new Set();
+async function refreshBannedSet(){
+  try{
+    const r=await fetch(FB+'/bans.json'); const d=await r.json();
+    bannedIdSet = new Set(d?Object.keys(d):[]);
+  }catch(e){}
+}
+const _origRenderLbBoards = renderLbBoards;
+renderLbBoards = function(rows){
+  const filtered = (rows||[]).filter(r => !bannedIdSet.has(r.id));
+  return _origRenderLbBoards(filtered);
+};
+const _origLbFetch = lbFetch;
+lbFetch = async function(){
+  await refreshBannedSet();
+  return _origLbFetch.apply(this, arguments);
+};
+
+// Run check at startup
+window.addEventListener('DOMContentLoaded', ()=>{ checkMyStatus(); });
+
 const LB_UID_KEY = 'rrUID';
 const LB_NAME_KEY = 'rrName';
 
