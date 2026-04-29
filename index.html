@@ -189,7 +189,7 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
 #adminBtn:hover{border-color:#3a3a5a;color:#4a4a68;}
 #adminOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:none;align-items:center;justify-content:center;}
 #adminOverlay.open{display:flex;}
-#adminModal{background:#0e0e1c;border:1px solid #3a1060;border-radius:14px;padding:28px;width:min(420px,90vw);display:flex;flex-direction:column;gap:14px;box-shadow:0 0 40px rgba(180,60,240,.2);}
+#adminModal{background:#0e0e1c;border:1px solid #3a1060;border-radius:14px;padding:28px;width:min(420px,90vw);max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 0 40px rgba(180,60,240,.2);}
 #adminModal h2{font-family:'Cinzel Decorative',cursive;font-size:1rem;color:#c060f0;text-align:center;letter-spacing:.12em;}
 .admin-row{display:flex;flex-direction:column;gap:5px;}
 .admin-lbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#7040a0;}
@@ -762,11 +762,38 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
           <option value="&#x1F5FF;">&#x1F5FF;</option>
           <option value="Transcendent">Transcendent</option>
           <option value="???">???</option>
-          <option value="Void">Void</option>
         </select>
         <button class="admin-apply-btn" onclick="adminForceRoll()">Set</button>
       </div>
       <hr class="admin-divider"/>
+      <div class="admin-row">
+        <label class="admin-lbl">&#x1F6E1; Player Management</label>
+        <button class="admin-apply-btn" onclick="adminLoadPlayers()" style="font-size:.6rem;">Refresh Players</button>
+        <div id="adminPlayerList" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
+      </div>
+      <hr class="admin-divider"/>
+      <div id="adminEditSection" style="display:none;">
+        <label class="admin-lbl">Editing: <span id="adminEditName" style="color:#c060f0;"></span></label>
+        <input type="hidden" id="adminEditUID"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+          <div class="admin-row"><label class="admin-lbl" style="font-size:.5rem;">Rolls</label><input class="admin-input" id="aeRolls" type="number"/></div>
+          <div class="admin-row"><label class="admin-lbl" style="font-size:.5rem;">Coins</label><input class="admin-input" id="aeCoins" type="number"/></div>
+          <div class="admin-row"><label class="admin-lbl" style="font-size:.5rem;">Rebirths</label><input class="admin-input" id="aeRebirths" type="number"/></div>
+          <div class="admin-row"><label class="admin-lbl" style="font-size:.5rem;">Best Roll</label>
+            <select class="admin-select" id="aeBest" style="font-size:.7rem;">
+              <option>Common</option><option>Uncommon</option><option>Rare</option><option>Epic</option>
+              <option>Legendary</option><option>Mythical</option><option>Exotic</option><option>Uber</option>
+              <option>Secret</option><option>&#x1F5FF;</option><option>Celestial</option><option>Transcendent</option><option>???</option><option>Void</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="admin-apply-btn" onclick="adminSavePlayer()" style="flex:1;">Save Changes</button>
+          <button class="admin-close" onclick="adminCancelEdit()" style="flex:1;">Cancel</button>
+        </div>
+        <button class="admin-apply-btn" onclick="adminDeletePlayer()" style="margin-top:6px;border-color:#f44336;color:#f44336;width:100%;font-size:.55rem;">Delete Player</button>
+        <hr class="admin-divider"/>
+      </div>
       <button class="admin-close" onclick="closeAdmin()">Close</button>
     </div>
   </div>
@@ -786,7 +813,7 @@ function safeClass(r){ return r==='\uD83D\uDDFF'?'Moai':r==='???'?'Unknown':r; }
 const REBIRTH_BASE = [300,1000,3000,8000,20000,60000,150000];
 
 const SHOP_ITEMS = [
-  {id:'luck1',type:'luck',name:'Lucky Charm',desc:"People talk about these a lot.",icon:'&#x1F340;',
+  {id:'luck1',type:'luck',name:'Lucky Charm',desc:"Apparently these things do something.",icon:'&#x1F340;',
    levels:[
      {cost:30,   luckBonus:5,  label:'+5% luck'},
      {cost:500,  luckBonus:20, label:'+20% luck'},
@@ -794,7 +821,7 @@ const SHOP_ITEMS = [
      {cost:8000, luckBonus:70, label:'+70% luck'},
      {cost:30000,luckBonus:110,label:'+110% luck'},
    ]},
-  {id:'luck2',type:'luck',name:'Carved Rune',desc:"Some random fossil that your Grandma is offering you for a price.",icon:'&#x1F52E;',
+  {id:'luck2',type:'luck',name:'Carved Rune',desc:"Your grandma wants you to buy this random relic off of her",icon:'&#x1F52E;',
    levels:[
      {cost:200,  luckBonus:10, label:'+10% luck'},
      {cost:1000, luckBonus:30, label:'+30% luck'},
@@ -811,7 +838,7 @@ const SHOP_ITEMS = [
      {cost:5000, luckBonus:90, label:'+90% luck'},
      {cost:20000,luckBonus:150,label:'+150% luck'},
    ]},
-  {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"More coins.",icon:'&#x1F4B0;',
+  {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"More money",icon:'&#x1F4B0;',
    levels:[
      {cost:40,    coinMult:1.5, label:'x1.5 coins'},
      {cost:500,   coinMult:2.0, label:'x2.0 coins'},
@@ -820,7 +847,7 @@ const SHOP_ITEMS = [
      {cost:40000, coinMult:8.0, label:'x8.0 coins'},
      {cost:1000000,coinMult:10.0,label:'x10.0 coins'},
    ]},
-  {id:'starFragment',type:'flatCoins',name:'Star dust',desc:"Powerful.",icon:'&#x2B50;',
+  {id:'starFragment',type:'flatCoins',name:'Star dust',desc:"More coins per roll..",icon:'&#x2B50;',
    levels:[
      {cost:200,   flatCoins:3,   label:'+3/roll'},
      {cost:900,   flatCoins:10,  label:'+10/roll'},
@@ -845,7 +872,7 @@ const REBIRTH_SHOP_ITEMS = [
   {id:'luckForever',   name:'Blessed Forever',  icon:'&#x267E;&#xFE0F;', cost:3, desc:'+50% luck, forever.'},
   {id:'autoRoll',      name:'Auto roll',        icon:'&#x26A1;',  cost:5,     desc:'Rolls automatically every second.',       group:'autoRoll'},
   {id:'fastAutoRoll',  name:'Fast auto roll',   icon:'&#x1F680;', cost:10,    desc:'Rolls 3 times a second.',                 group:'autoRoll'},
-  {id:'ultraAutoRoll', name:'Giga roller',      icon:'&#x1F4A5;', cost:1000,    desc:'Rolls 10 times a second.',                group:'autoRoll'},
+  {id:'ultraAutoRoll', name:'Giga roller',      icon:'&#x1F4A5;', cost:20,    desc:'Rolls 10 times a second.',                group:'autoRoll'},
   {id:'omegaAutoRoll', name:'Omega roller',     icon:'&#x1F300;', cost:15000, desc:'Rolls 50 times a second.',                group:'autoRoll'},
   {id:'coinRain',      name:'Gold Shower',      icon:'&#x1F327;&#xFE0F;', cost:2, desc:'+25% on all coin drops, every roll, forever.'},
   {id:'fortunesSon',   name:'Common Blocker',   icon:'&#x1F9E7;', cost:4,     desc:'Bans Common and Uncommon from ever being rolled.'},
@@ -1220,8 +1247,8 @@ function updateAutoRoll(){
 
   const rs=state.rebirthShop||{};
   if(rs.autoRebirth||rs.fastAutoRebirth){
-    const interval=rs.fastAutoRebirth?10:500;
-    const minGap=rs.fastAutoRebirth?100:2000;
+    const interval=rs.fastAutoRebirth?1:500;
+    const minGap=rs.fastAutoRebirth?10:2000;
     autoRebirthTimer=setInterval(()=>{
       if(state.autoRebirthEnabled!==false && canRebirth() && Date.now()-lastRebirthTime>minGap) doRebirth();
     }, interval);
@@ -1459,8 +1486,13 @@ function resetAll(){
 }
 
 // ── ADMIN ──
-const ADMIN_PW='pneumonoultramicroscopicsilicovolcanoconiosis<option value="???">???</option>pneumonoultramicroscopicsilicovolcanoconiosis<option value="???">???</option>';
+const ADMIN_HASH='e59a962210e6a777087dc135d508d0b2d2371647f138a300bb0b8a852aef7fda';
 let adminUnlocked=false;
+async function hashPw(pw){
+  const enc=new TextEncoder().encode(pw);
+  const buf=await crypto.subtle.digest('SHA-256',enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 function openAdmin(){
   document.getElementById('adminOverlay').classList.add('open');
@@ -1475,12 +1507,14 @@ function openAdmin(){
     setTimeout(()=>document.getElementById('adminPwInput').focus(),50);
   }
 }
-function adminLogin(){
+async function adminLogin(){
   const pw=document.getElementById('adminPwInput').value;
-  if(pw===ADMIN_PW){
+  const h=await hashPw(pw);
+  if(h===ADMIN_HASH){
     adminUnlocked=true;
     document.getElementById('adminLoginScreen').style.display='none';
     document.getElementById('adminPanelScreen').style.display='flex';
+    adminLoadPlayers();
   } else {
     document.getElementById('adminPwError').style.display='block';
     document.getElementById('adminPwInput').value='';
@@ -1507,6 +1541,82 @@ function adminForceRoll(){
   toast(forcedRarity?'[Admin] Next roll: '+forcedRarity:'[Admin] Force cleared.');
 }
 document.getElementById('adminOverlay').addEventListener('click',function(e){if(e.target===this)closeAdmin();});
+
+// ── ADMIN PLAYER MANAGEMENT ──
+let adminPlayers=[];
+async function adminLoadPlayers(){
+  const el=document.getElementById('adminPlayerList');
+  el.innerHTML='<div style="color:#5a3070;font-size:.6rem;text-align:center;">Loading...</div>';
+  try{
+    const res=await fetch(FB+'/leaderboard.json');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    adminPlayers=data?Object.entries(data).map(([id,v])=>({id,...v})):[];
+    adminPlayers.sort((a,b)=>(b.coins||0)-(a.coins||0));
+    if(!adminPlayers.length){el.innerHTML='<div style="color:#5a3070;font-size:.6rem;text-align:center;">No players found.</div>';return;}
+    el.innerHTML=adminPlayers.map(p=>
+      '<div style="display:flex;align-items:center;justify-content:space-between;background:#13131f;border:1px solid #2a1040;border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="adminEditPlayer(\''+p.id+'\')">'
+      +'<span style="font-family:Cinzel,serif;font-size:.7rem;color:var(--text);">'+esc(p.name||'???')+'</span>'
+      +'<span style="font-size:.55rem;color:#5a3070;">'+fmt(p.coins||0)+' coins · '+fmt(p.rolls||0)+' rolls</span>'
+      +'</div>'
+    ).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#f44336;font-size:.6rem;text-align:center;">Error: '+e.message+'</div>';
+  }
+}
+function adminEditPlayer(uid){
+  const p=adminPlayers.find(x=>x.id===uid);
+  if(!p) return;
+  document.getElementById('adminEditSection').style.display='block';
+  document.getElementById('adminEditName').textContent=p.name||'???';
+  document.getElementById('adminEditUID').value=uid;
+  document.getElementById('aeRolls').value=p.rolls||0;
+  document.getElementById('aeCoins').value=p.coins||0;
+  document.getElementById('aeRebirths').value=p.rebirths||0;
+  document.getElementById('aeBest').value=p.best||'Common';
+}
+function adminCancelEdit(){
+  document.getElementById('adminEditSection').style.display='none';
+}
+async function adminSavePlayer(){
+  const uid=document.getElementById('adminEditUID').value;
+  const p=adminPlayers.find(x=>x.id===uid);
+  if(!p) return;
+  const payload={
+    name:p.name,
+    rolls:parseInt(document.getElementById('aeRolls').value)||0,
+    coins:parseInt(document.getElementById('aeCoins').value)||0,
+    rebirths:parseInt(document.getElementById('aeRebirths').value)||0,
+    best:document.getElementById('aeBest').value||'Common',
+    ts:Date.now()
+  };
+  try{
+    const res=await fetch(FB+'/leaderboard/'+uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    toast('[Admin] Updated '+payload.name+'\'s scores.');
+    adminCancelEdit();
+    adminLoadPlayers();
+    lbFetch();
+  }catch(e){
+    toast('[Admin] Save failed: '+e.message);
+  }
+}
+async function adminDeletePlayer(){
+  const uid=document.getElementById('adminEditUID').value;
+  const p=adminPlayers.find(x=>x.id===uid);
+  if(!p) return;
+  if(!confirm('Delete '+p.name+' from leaderboard?')) return;
+  try{
+    const res=await fetch(FB+'/leaderboard/'+uid+'.json',{method:'DELETE'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    toast('[Admin] Deleted '+p.name+' from leaderboard.');
+    adminCancelEdit();
+    adminLoadPlayers();
+    lbFetch();
+  }catch(e){
+    toast('[Admin] Delete failed: '+e.message);
+  }
+}
 
 // ── FIREBASE LEADERBOARD ──
 const FIREBASE_URL = 'https://rarityrng-38a63-default-rtdb.europe-west1.firebasedatabase.app';
@@ -1909,14 +2019,14 @@ const BREW_RECIPES={
   celestial:{
     name:'Celestial Potion',icon:'\u2728',
     requirements:{moais:5,ubers:5,exotics:10,rebirthTokens:500},
-    baseBrew:5*60*1000,     
+    baseBrew:5*60*1000,     // 5 min base; minigame: great→2.5min, ok→4min, miss→5min
     minGreat:2.5*60*1000, minOk:4*60*1000,
     reward:'ltCelestialBrews',
   },
   void:{
     name:'Void Potion',icon:'\u25FE',
-    requirements:{rebirthTokens:100000,unknowns:5,transcendents:5,coins:10000000000,achievements:25,rolls:100000,celestialBrews:100},
-    baseBrew:12*60*60*1000,
+    requirements:{rebirthTokens:20000,unknowns:3,transcendents:5,coins:10000000000,achievements:25,rolls:100000,celestialBrews:100},
+    baseBrew:12*60*60*1000, // 12 hr base; minigame: great→6hr, ok→9hr, miss→12hr
     minGreat:6*60*60*1000, minOk:9*60*60*1000,
     reward:'ltVoidBrews',
     grantsRoll:'Void',
