@@ -835,8 +835,6 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
           <option value="&#x1F5FF;">&#x1F5FF;</option>
           <option value="Transcendent">Transcendent</option>
           <option value="???">???</option>
-          <option value="Void">Void</option>
-          <option value="Radiant">Radiant</option>
         </select>
         <button class="admin-apply-btn" onclick="adminForceRoll()">Set</button>
       </div>
@@ -1642,9 +1640,12 @@ function toast(msg){
   toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
 }
 function fmt(n){
-  if(n>=1000000000) return (Math.floor(n/100000000)/10)+'B';
-  if(n>=1000000) return (Math.floor(n/100000)/10)+'M';
-  if(n>=1000) return (Math.floor(n/100)/10)+'k';
+  if(n>=1e18) return (Math.floor(n/1e17)/10)+'Qi';
+  if(n>=1e15) return (Math.floor(n/1e14)/10)+'Qa';
+  if(n>=1e12) return (Math.floor(n/1e11)/10)+'T';
+  if(n>=1e9)  return (Math.floor(n/1e8)/10)+'B';
+  if(n>=1e6)  return (Math.floor(n/1e5)/10)+'M';
+  if(n>=1e3)  return (Math.floor(n/1e2)/10)+'k';
   return n;
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
