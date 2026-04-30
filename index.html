@@ -370,6 +370,46 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
 #cutscene.cs-void .cs-coins{font-size:clamp(.9rem,2.5vw,1.3rem);color:rgba(150,0,255,.9);font-family:'Cinzel',serif;animation:csFadeIn 1s 2s both;}
 .cs-void-particle{position:absolute;border-radius:50%;pointer-events:none;animation:voidAbsorb var(--dur,3s) var(--delay,0s) ease-in forwards;}
 @keyframes voidAbsorb{0%{opacity:.8;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx,0),var(--ty,0)) scale(0)}}
+/* ── RADIANT (rarer than Void) ── */
+.c-Radiant{color:#ffffff;background:linear-gradient(90deg,#ff5e5e,#ffcf5e,#5eff8a,#5ed7ff,#a05eff,#ff5ed7,#ff5e5e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;background-size:400% 100%;}
+.glow-Radiant{animation:radiantShift 2s linear infinite,radiantPulse 1.5s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(255,255,255,.95)) drop-shadow(0 0 50px rgba(255,255,255,.7)) drop-shadow(0 0 100px rgba(180,220,255,.5));}
+@keyframes radiantShift{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+@keyframes radiantPulse{0%,100%{filter:drop-shadow(0 0 18px rgba(255,255,255,.95)) drop-shadow(0 0 50px rgba(255,255,255,.7)) drop-shadow(0 0 100px rgba(180,220,255,.5))}50%{filter:drop-shadow(0 0 30px rgba(255,255,255,1)) drop-shadow(0 0 90px rgba(255,210,180,.9)) drop-shadow(0 0 180px rgba(180,255,220,.8))}}
+/* ── RADIANT CUTSCENE — the brightest moment in the game ── */
+#cutscene.cs-radiant{background:#000;perspective:1200px;}
+#cutscene.cs-radiant .cs-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#ffffff 0%,#fff8e0 8%,#ffd76b 16%,#ff7b6b 28%,#a05eff 44%,#3a1080 64%,#000 90%);animation:radBgZoom 6s ease-out forwards,radBgPulse 1.4s 1s ease-in-out infinite;}
+@keyframes radBgZoom{0%{transform:scale(.05);opacity:0;filter:blur(60px)}25%{opacity:1;filter:blur(20px)}100%{transform:scale(1.15);opacity:1;filter:blur(0)}}
+@keyframes radBgPulse{0%,100%{filter:brightness(1) saturate(1.1)}50%{filter:brightness(1.18) saturate(1.4)}}
+#cutscene.cs-radiant .cs-prism-rays{position:absolute;inset:-10%;background:conic-gradient(from 0deg at 50% 50%,#ff3b3b 0deg,transparent 6deg,transparent 24deg,#ffb13b 30deg,transparent 36deg,transparent 54deg,#fff03b 60deg,transparent 66deg,transparent 84deg,#3bff7a 90deg,transparent 96deg,transparent 114deg,#3bd1ff 120deg,transparent 126deg,transparent 144deg,#7a3bff 150deg,transparent 156deg,transparent 174deg,#ff3bd1 180deg,transparent 186deg,transparent 204deg,#ff3b3b 210deg,transparent 216deg,transparent 234deg,#ffb13b 240deg,transparent 246deg,transparent 264deg,#fff03b 270deg,transparent 276deg,transparent 294deg,#3bff7a 300deg,transparent 306deg,transparent 324deg,#3bd1ff 330deg,transparent 336deg,transparent 354deg,#7a3bff 360deg);mix-blend-mode:screen;opacity:0;animation:radRaysIn 1.6s .4s ease-out forwards,radRaysSpin 30s 2s linear infinite;filter:blur(2px);}
+@keyframes radRaysIn{0%{opacity:0;transform:scale(.4) rotate(-90deg)}100%{opacity:.85;transform:scale(1) rotate(0)}}
+@keyframes radRaysSpin{to{transform:rotate(360deg)}}
+#cutscene.cs-radiant .cs-prism-rays2{position:absolute;inset:-15%;background:conic-gradient(from 180deg at 50% 50%,transparent 0deg,rgba(255,255,255,.5) 4deg,transparent 8deg,transparent 40deg,rgba(255,200,255,.4) 44deg,transparent 48deg,transparent 90deg,rgba(180,255,255,.5) 94deg,transparent 98deg,transparent 140deg,rgba(255,230,180,.4) 144deg,transparent 148deg,transparent 200deg,rgba(255,180,220,.5) 204deg,transparent 208deg,transparent 260deg,rgba(180,220,255,.4) 264deg,transparent 268deg,transparent 320deg,rgba(255,255,200,.5) 324deg,transparent 328deg);mix-blend-mode:screen;opacity:0;animation:radRays2In 2s .8s ease-out forwards,radRays2Spin 45s 2s linear infinite reverse;filter:blur(4px);}
+@keyframes radRays2In{0%{opacity:0}100%{opacity:.7}}
+@keyframes radRays2Spin{to{transform:rotate(-360deg)}}
+#cutscene.cs-radiant .cs-flare{position:absolute;left:50%;top:50%;width:300px;height:300px;margin-left:-150px;margin-top:-150px;border-radius:50%;background:radial-gradient(circle,#ffffff 0%,#fffbe0 25%,rgba(255,240,200,.6) 45%,transparent 70%);mix-blend-mode:screen;animation:radFlare 2.4s ease-in-out infinite;filter:blur(8px);}
+@keyframes radFlare{0%,100%{transform:scale(1);opacity:.95}50%{transform:scale(1.6);opacity:1}}
+#cutscene.cs-radiant .cs-core{position:absolute;left:50%;top:50%;width:60px;height:60px;margin-left:-30px;margin-top:-30px;border-radius:50%;background:#fff;box-shadow:0 0 60px 20px #fff,0 0 140px 60px rgba(255,250,220,.85),0 0 280px 120px rgba(255,230,180,.55),0 0 500px 200px rgba(180,220,255,.35);animation:radCore 1.8s ease-in-out infinite;}
+@keyframes radCore{0%,100%{transform:scale(1);box-shadow:0 0 60px 20px #fff,0 0 140px 60px rgba(255,250,220,.85),0 0 280px 120px rgba(255,230,180,.55),0 0 500px 200px rgba(180,220,255,.35)}50%{transform:scale(1.4);box-shadow:0 0 100px 40px #fff,0 0 220px 100px rgba(255,250,220,.95),0 0 420px 180px rgba(255,230,180,.7),0 0 700px 300px rgba(220,240,255,.5)}}
+#cutscene.cs-radiant .cs-shockwave{position:absolute;left:50%;top:50%;width:100px;height:100px;margin-left:-50px;margin-top:-50px;border-radius:50%;border:3px solid rgba(255,255,255,.8);animation:radShockwave var(--dur,4s) var(--delay,0s) ease-out infinite;}
+@keyframes radShockwave{0%{transform:translate(-50%,-50%) scale(0);opacity:1;border-color:rgba(255,255,255,1);box-shadow:0 0 40px rgba(255,255,255,.8),inset 0 0 40px rgba(255,255,255,.5)}50%{border-color:rgba(255,200,255,.6);box-shadow:0 0 60px rgba(255,200,255,.4)}100%{transform:translate(-50%,-50%) scale(8);opacity:0;border-color:rgba(180,220,255,0)}}
+#cutscene.cs-radiant .cs-chroma{position:absolute;inset:0;background:linear-gradient(45deg,rgba(255,80,80,.06),rgba(80,255,255,.06));mix-blend-mode:screen;animation:radChromaShift 3s ease-in-out infinite;}
+@keyframes radChromaShift{0%,100%{transform:translate(0,0)}33%{transform:translate(3px,-2px)}66%{transform:translate(-3px,2px)}}
+#cutscene.cs-radiant .cs-godrays{position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(255,255,255,.04) 1deg,transparent 2deg);animation:radRaysSpin 50s linear infinite;mix-blend-mode:screen;}
+#cutscene.cs-radiant .cs-title{position:relative;z-index:5;text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px;animation:radTitleReveal 1.5s 1.2s cubic-bezier(.175,.885,.32,1.275) both;}
+@keyframes radTitleReveal{0%{opacity:0;transform:scale(3) rotateX(60deg);filter:blur(40px) brightness(3)}50%{opacity:1;filter:blur(8px) brightness(2)}100%{opacity:1;transform:scale(1) rotateX(0);filter:blur(0) brightness(1)}}
+#cutscene.cs-radiant .cs-word{font-family:'Cinzel Decorative',cursive;font-size:clamp(3.5rem,14vw,7rem);letter-spacing:.35em;font-weight:900;background:linear-gradient(90deg,#ff5e5e 0%,#ffcf5e 16%,#5eff8a 33%,#5ed7ff 50%,#a05eff 66%,#ff5ed7 83%,#ff5e5e 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 0 20px rgba(255,255,255,.95)) drop-shadow(0 0 60px rgba(255,255,255,.8)) drop-shadow(0 0 140px rgba(255,210,180,.7));animation:radWordShift 3s linear infinite,radWordPulse 2s ease-in-out infinite;}
+@keyframes radWordShift{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+@keyframes radWordPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(255,255,255,.95)) drop-shadow(0 0 60px rgba(255,255,255,.8)) drop-shadow(0 0 140px rgba(255,210,180,.7))}50%{transform:scale(1.04);filter:drop-shadow(0 0 35px rgba(255,255,255,1)) drop-shadow(0 0 100px rgba(255,255,255,.9)) drop-shadow(0 0 220px rgba(180,255,220,.8))}}
+#cutscene.cs-radiant .cs-sub{font-size:clamp(.85rem,2.7vw,1.3rem);letter-spacing:.5em;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.9),0 0 50px rgba(255,220,180,.7);font-family:'Cinzel',serif;animation:csFadeIn 1.2s 2s both;}
+#cutscene.cs-radiant .cs-coins{font-size:clamp(1rem,3vw,1.7rem);color:#fffaef;text-shadow:0 0 18px rgba(255,255,255,.9),0 0 40px rgba(255,200,150,.7);font-family:'Cinzel',serif;font-weight:700;animation:csFadeIn 1.2s 2.4s both;}
+.cs-rad-particle{position:absolute;border-radius:50%;pointer-events:none;mix-blend-mode:screen;animation:radParticle var(--dur,3s) var(--delay,0s) ease-out forwards;}
+@keyframes radParticle{0%{opacity:0;transform:translate(0,0) scale(0)}15%{opacity:1;transform:translate(calc(var(--tx)*.15),calc(var(--ty)*.15)) scale(1.2)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+.cs-rad-streak{position:absolute;left:50%;top:50%;width:2px;background:linear-gradient(to bottom,transparent,#fff,transparent);transform-origin:50% 0;mix-blend-mode:screen;filter:blur(1px);animation:radStreak var(--dur,2s) var(--delay,0s) ease-out infinite;}
+@keyframes radStreak{0%{opacity:0;height:0}30%{opacity:1}100%{opacity:0;height:var(--len,400px)}}
+/* radiant index card */
+.cs-index-card.rad-card{border-color:#a05eff;background:linear-gradient(135deg,rgba(255,94,94,.04),rgba(94,215,255,.04),rgba(160,94,255,.04));}
+.cs-index-card.rad-card:hover{border-color:#fff;box-shadow:0 0 24px rgba(255,255,255,.4),0 0 60px rgba(160,94,255,.3);}
+.cs-index-name.rad-name{background:linear-gradient(90deg,#ff5e5e,#ffcf5e,#5eff8a,#5ed7ff,#a05eff,#ff5ed7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 14px rgba(255,255,255,.5);}
 /* live feed */
 .live-entry{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--border2);font-size:.74rem;animation:slideIn .3s ease forwards;}
 .live-entry.live-trans{border-color:#5a4010;background:rgba(255,200,0,.04);}
@@ -846,10 +886,10 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
 
 <script>
 // ── CONSTANTS ──
-const RARITIES = ["Common","Uncommon","Rare","Epic","Legendary","Mythical","Exotic","Uber","Secret","\uD83D\uDDFF","Celestial","Transcendent","???","Void"];
-const BASE_W   = [50, 25, 12, 8, 4, 0.89, 0.1, 0.01, 0.003, 0.0005, 0.00008, 0.00003, 0.000015, 0.000001];
-const COLORS   = {Common:'#9a9a9a',Uncommon:'#4caf50',Rare:'#2196f3',Epic:'#ab47bc',Legendary:'#ff9800',Mythical:'#f44336',Exotic:'#AAFF00',Uber:'#32cd32',Secret:'#00e5ff','\uD83D\uDDFF':'#ffffff',Celestial:'#b388ff',Transcendent:'#ffd700','???':'#000000',Void:'#7c00e0'};
-const COIN_REWARDS = {Common:1,Uncommon:3,Rare:8,Epic:20,Legendary:60,Mythical:200,Exotic:500,Uber:1000,Secret:5000,'\uD83D\uDDFF':25000,Celestial:80000,Transcendent:100000,'???':1000000,Void:1000000000};
+const RARITIES = ["Common","Uncommon","Rare","Epic","Legendary","Mythical","Exotic","Uber","Secret","\uD83D\uDDFF","Celestial","Transcendent","???","Void","Radiant"];
+const BASE_W   = [50, 25, 12, 8, 4, 0.89, 0.1, 0.01, 0.003, 0.0005, 0.00008, 0.00003, 0.000015, 0.000001, 0.00000001];
+const COLORS   = {Common:'#9a9a9a',Uncommon:'#4caf50',Rare:'#2196f3',Epic:'#ab47bc',Legendary:'#ff9800',Mythical:'#f44336',Exotic:'#AAFF00',Uber:'#32cd32',Secret:'#00e5ff','\uD83D\uDDFF':'#ffffff',Celestial:'#b388ff',Transcendent:'#ffd700','???':'#000000',Void:'#7c00e0',Radiant:'#ffffff'};
+const COIN_REWARDS = {Common:1,Uncommon:3,Rare:8,Epic:20,Legendary:60,Mythical:200,Exotic:500,Uber:1000,Secret:5000,'\uD83D\uDDFF':25000,Celestial:80000,Transcendent:100000,'???':1000000,Void:1000000000,Radiant:10000000000};
 // Transcendent base chance: 0.00003 / (50+25+12+8+4+0.89+0.1+0.01+0.003+0.0005+0.00003) ≈ 0.003%
 // Hard cap applied in getWeights: never exceeds 0.005% regardless of luck
 
@@ -860,46 +900,96 @@ const REBIRTH_BASE = [300,1000,3000,8000,20000,60000,150000];
 const SHOP_ITEMS = [
   {id:'luck1',type:'luck',name:'Lucky Charm',desc:"Apparently these things do something.",icon:'&#x1F340;',
    levels:[
-     {cost:30,   luckBonus:5,  label:'+5% luck'},
-     {cost:500,  luckBonus:20, label:'+20% luck'},
-     {cost:2000, luckBonus:40, label:'+40% luck'},
-     {cost:8000, luckBonus:70, label:'+70% luck'},
-     {cost:30000,luckBonus:110,label:'+110% luck'},
+     {cost:30,        luckBonus:5,    label:'+5% luck'},
+     {cost:500,       luckBonus:20,   label:'+20% luck'},
+     {cost:2000,      luckBonus:40,   label:'+40% luck'},
+     {cost:8000,      luckBonus:70,   label:'+70% luck'},
+     {cost:30000,     luckBonus:110,  label:'+110% luck'},
+     {cost:120000,    luckBonus:160,  label:'+160% luck'},
+     {cost:500000,    luckBonus:230,  label:'+230% luck'},
+     {cost:2000000,   luckBonus:320,  label:'+320% luck'},
+     {cost:8000000,   luckBonus:430,  label:'+430% luck'},
+     {cost:30000000,  luckBonus:560,  label:'+560% luck'},
+     {cost:120000000, luckBonus:720,  label:'+720% luck'},
+     {cost:500000000, luckBonus:900,  label:'+900% luck'},
+     {cost:2000000000,luckBonus:1100, label:'+1100% luck'},
+     {cost:8000000000,luckBonus:1350, label:'+1350% luck'},
+     {cost:30000000000,luckBonus:1650,label:'+1650% luck'},
    ]},
   {id:'luck2',type:'luck',name:'Carved Rune',desc:"Your grandma wants you to buy this random relic off of her",icon:'&#x1F52E;',
    levels:[
-     {cost:200,  luckBonus:10, label:'+10% luck'},
-     {cost:1000, luckBonus:30, label:'+30% luck'},
-     {cost:2000, luckBonus:80, label:'+80% luck'},
-     {cost:10000,luckBonus:130,label:'+130% luck'},
-     {cost:50000,luckBonus:200,label:'+200% luck'},
-     {cost:1500000,luckBonus:300,label:'+300% luck'},
+     {cost:200,         luckBonus:10,   label:'+10% luck'},
+     {cost:1000,        luckBonus:30,   label:'+30% luck'},
+     {cost:2000,        luckBonus:80,   label:'+80% luck'},
+     {cost:10000,       luckBonus:130,  label:'+130% luck'},
+     {cost:50000,       luckBonus:200,  label:'+200% luck'},
+     {cost:1500000,     luckBonus:300,  label:'+300% luck'},
+     {cost:6000000,     luckBonus:420,  label:'+420% luck'},
+     {cost:24000000,    luckBonus:560,  label:'+560% luck'},
+     {cost:90000000,    luckBonus:720,  label:'+720% luck'},
+     {cost:350000000,   luckBonus:900,  label:'+900% luck'},
+     {cost:1300000000,  luckBonus:1100, label:'+1100% luck'},
+     {cost:5000000000,  luckBonus:1320, label:'+1320% luck'},
+     {cost:20000000000, luckBonus:1570, label:'+1570% luck'},
+     {cost:80000000000, luckBonus:1850, label:'+1850% luck'},
+     {cost:300000000000,luckBonus:2200, label:'+2200% luck'},
+     {cost:1200000000000,luckBonus:2600,label:'+2600% luck'},
    ]},
   {id:'luck3',type:'luck',name:'Third Eye',desc:"Having a third eye causes you to become more addicted, increasing luck",icon:'&#x1F441;',
    levels:[
-     {cost:150,  luckBonus:15, label:'+15% luck'},
-     {cost:400,  luckBonus:30, label:'+30% luck'},
-     {cost:900,  luckBonus:50, label:'+50% luck'},
-     {cost:5000, luckBonus:90, label:'+90% luck'},
-     {cost:20000,luckBonus:150,label:'+150% luck'},
+     {cost:150,        luckBonus:15,   label:'+15% luck'},
+     {cost:400,        luckBonus:30,   label:'+30% luck'},
+     {cost:900,        luckBonus:50,   label:'+50% luck'},
+     {cost:5000,       luckBonus:90,   label:'+90% luck'},
+     {cost:20000,      luckBonus:150,  label:'+150% luck'},
+     {cost:80000,      luckBonus:220,  label:'+220% luck'},
+     {cost:320000,     luckBonus:310,  label:'+310% luck'},
+     {cost:1300000,    luckBonus:420,  label:'+420% luck'},
+     {cost:5000000,    luckBonus:550,  label:'+550% luck'},
+     {cost:20000000,   luckBonus:700,  label:'+700% luck'},
+     {cost:80000000,   luckBonus:880,  label:'+880% luck'},
+     {cost:320000000,  luckBonus:1080, label:'+1080% luck'},
+     {cost:1300000000, luckBonus:1310, label:'+1310% luck'},
+     {cost:5000000000, luckBonus:1570, label:'+1570% luck'},
+     {cost:20000000000,luckBonus:1860, label:'+1860% luck'},
    ]},
   {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"More money",icon:'&#x1F4B0;',
    levels:[
-     {cost:40,    coinMult:1.5, label:'x1.5 coins'},
-     {cost:500,   coinMult:2.0, label:'x2.0 coins'},
-     {cost:1000,  coinMult:3.0, label:'x3.0 coins'},
-     {cost:8000,  coinMult:5.0, label:'x5.0 coins'},
-     {cost:40000, coinMult:8.0, label:'x8.0 coins'},
-     {cost:1000000,coinMult:10.0,label:'x10.0 coins'},
+     {cost:40,            coinMult:1.5,   label:'x1.5 coins'},
+     {cost:500,           coinMult:2.0,   label:'x2.0 coins'},
+     {cost:1000,          coinMult:3.0,   label:'x3.0 coins'},
+     {cost:8000,          coinMult:5.0,   label:'x5.0 coins'},
+     {cost:40000,         coinMult:8.0,   label:'x8.0 coins'},
+     {cost:1000000,       coinMult:10.0,  label:'x10.0 coins'},
+     {cost:5000000,       coinMult:14.0,  label:'x14.0 coins'},
+     {cost:25000000,      coinMult:20.0,  label:'x20.0 coins'},
+     {cost:120000000,     coinMult:28.0,  label:'x28.0 coins'},
+     {cost:600000000,     coinMult:40.0,  label:'x40.0 coins'},
+     {cost:3000000000,    coinMult:55.0,  label:'x55.0 coins'},
+     {cost:15000000000,   coinMult:75.0,  label:'x75.0 coins'},
+     {cost:75000000000,   coinMult:100.0, label:'x100 coins'},
+     {cost:350000000000,  coinMult:135.0, label:'x135 coins'},
+     {cost:1500000000000, coinMult:180.0, label:'x180 coins'},
+     {cost:6000000000000, coinMult:240.0, label:'x240 coins'},
    ]},
   {id:'starFragment',type:'flatCoins',name:'Star dust',desc:"More coins per roll..",icon:'&#x2B50;',
    levels:[
-     {cost:200,   flatCoins:3,   label:'+3/roll'},
-     {cost:900,   flatCoins:10,  label:'+10/roll'},
-     {cost:3500,  flatCoins:30,  label:'+30/roll'},
-     {cost:15000, flatCoins:100, label:'+100/roll'},
-     {cost:200000, flatCoins:300, label:'+300/roll'},
-     {cost:1000000, flatCoins:1000, label:'+1000/roll'},
+     {cost:200,           flatCoins:3,        label:'+3/roll'},
+     {cost:900,           flatCoins:10,       label:'+10/roll'},
+     {cost:3500,          flatCoins:30,       label:'+30/roll'},
+     {cost:15000,         flatCoins:100,      label:'+100/roll'},
+     {cost:200000,        flatCoins:300,      label:'+300/roll'},
+     {cost:1000000,       flatCoins:1000,     label:'+1000/roll'},
+     {cost:5000000,       flatCoins:3000,     label:'+3,000/roll'},
+     {cost:25000000,      flatCoins:9000,     label:'+9,000/roll'},
+     {cost:120000000,     flatCoins:25000,    label:'+25,000/roll'},
+     {cost:600000000,     flatCoins:70000,    label:'+70,000/roll'},
+     {cost:3000000000,    flatCoins:200000,   label:'+200,000/roll'},
+     {cost:15000000000,   flatCoins:550000,   label:'+550,000/roll'},
+     {cost:75000000000,   flatCoins:1500000,  label:'+1.5M/roll'},
+     {cost:350000000000,  flatCoins:4000000,  label:'+4M/roll'},
+     {cost:1500000000000, flatCoins:11000000, label:'+11M/roll'},
+     {cost:6000000000000, flatCoins:30000000, label:'+30M/roll'},
    ]},
   {id:'potionSmall',type:'consumable',potionType:'small',name:'Weak Luck Vial',desc:'+40% luck for 5 rolls.',icon:'&#x1F9EA;',
    levels:[{cost:50,qty:1,label:'Buy x1'},{cost:130,qty:3,label:'Buy x3'},{cost:300,qty:8,label:'Buy x8'}],repeatable:true},
@@ -937,8 +1027,8 @@ function defaultState(){
   return {
     coins:0,totalCoins:0,rolls:0,
     highest:null,
-    mythicals:0,legendaries:0,exotics:0,ubers:0,secrets:0,moais:0,celestials:0,transcendents:0,unknowns:0,voids:0,
-    ltMythicals:0,ltLegendaries:0,ltExotics:0,ltUbers:0,ltSecrets:0,ltMoais:0,ltCelestials:0,ltTranscendents:0,ltUnknowns:0,ltVoids:0,ltRolls:0,
+    mythicals:0,legendaries:0,exotics:0,ubers:0,secrets:0,moais:0,celestials:0,transcendents:0,unknowns:0,voids:0,radiants:0,
+    ltMythicals:0,ltLegendaries:0,ltExotics:0,ltUbers:0,ltSecrets:0,ltMoais:0,ltCelestials:0,ltTranscendents:0,ltUnknowns:0,ltVoids:0,ltRadiants:0,ltRolls:0,
     ltCelestialBrews:0,ltVoidBrews:0,
     history:[],upgrades:{},
     potionsSmall:0,potionsMedium:0,potionsLarge:0,
@@ -1053,9 +1143,10 @@ function getWeights(){
   if(legendBlocker){ w[4]=0; }
 
   const total = w.reduce((a,b)=>a+b,0);
-  w[11] = Math.min(w[11], total * 0.00005);   // Transcendent cap 0.005%
-  w[12] = Math.min(w[12], total * 0.000025);  // ??? cap 0.0025%
-  w[13] = Math.min(w[13], total * 0.000001);  // Void hard cap: 1-in-a-million always
+  w[11] = Math.min(w[11], total * 0.00005);    // Transcendent cap 0.005%
+  w[12] = Math.min(w[12], total * 0.000025);   // ??? cap 0.0025%
+  w[13] = Math.min(w[13], total * 0.000001);   // Void hard cap: 1-in-a-million always
+  w[14] = Math.min(w[14], total * 0.00000001); // Radiant hard cap: 1-in-100-million always
   return w;
 }
 function weightedRandom(weights){
@@ -1094,6 +1185,7 @@ function doRebirth(){
     ltTranscendents:(state.ltTranscendents||0)+(state.transcendents||0),
     ltUnknowns:(state.ltUnknowns||0)+(state.unknowns||0),
     ltVoids:(state.ltVoids||0)+(state.voids||0),
+    ltRadiants:(state.ltRadiants||0)+(state.radiants||0),
     ltRolls:(state.ltRolls||0)+(state.rolls||0),
     ltCelestialBrews:(state.ltCelestialBrews||0),
     ltVoidBrews:(state.ltVoidBrews||0),
@@ -1190,7 +1282,8 @@ function doRoll(){
   if(result==='Transcendent'){state.transcendents=(state.transcendents||0)+1;state.pityTranscendent=0;}
   if(result==='???')         {state.unknowns=(state.unknowns||0)+1;state.pityUnknown=0;state.pityTranscendent=0;}
   if(result==='Void')        {state.voids=(state.voids||0)+1;}
-  if(result==='Transcendent'||result==='???'||result==='Void') pushLiveEvent(result);
+  if(result==='Radiant')     {state.radiants=(state.radiants||0)+1;}
+  if(result==='Transcendent'||result==='???'||result==='Void'||result==='Radiant') pushLiveEvent(result);
   save(); renderAll(); animateResult(result,earned);
   if(rarityRank(result)>=2) spawnParticles(COLORS[result]);
   lbAutoSubmit();
@@ -1205,7 +1298,7 @@ function animateResult(result,earned){
   el.textContent=result;
   el.className='result-rarity pop c-'+sc+' glow-'+sc;
   document.getElementById('resultSub').textContent='+'+earned+'\uD83E\uDE99  '+getFlavorText(result);
-  if(result==='Transcendent'||result==='???'||result==='Void') playCutscene(result,earned);
+  if(result==='Transcendent'||result==='???'||result==='Void'||result==='Radiant') playCutscene(result,earned);
 }
 
 function getFlavorText(r){
@@ -1224,6 +1317,7 @@ function getFlavorText(r){
     Transcendent:['TRANSCENDENT.','The veil tears open.','There are no words.'],
     '???':['...what?','This was not meant to happen.','ERROR: RARITY NOT FOUND'],
     Void:['THE VOID OPENS.','You have been consumed.','There is nothing left.'],
+    Radiant:['THE LIGHT BREAKS THROUGH.','Pure brilliance. Nothing else.','A miracle, captured.'],
   };
   const a=t[r]||['???'];
   return a[Math.floor(Math.random()*a.length)];
@@ -2112,6 +2206,33 @@ function playCutscene(rarity,earned,replay){
     spawnVoidParticles('csVoidStars');
     spawnCsStars('csVoidStars','#7c00e0');
     csTimer=setTimeout(()=>closeCutscene(),12000);
+  } else if(rarity==='Radiant'){
+    cs.className='active cs-radiant';
+    const radFlavor=getFlavorText('Radiant');
+    cs.innerHTML=
+       '<div class="cs-bg"></div>'
+      +'<div class="cs-godrays"></div>'
+      +'<div class="cs-prism-rays"></div>'
+      +'<div class="cs-prism-rays2"></div>'
+      +'<div class="cs-chroma"></div>'
+      +'<div class="cs-flare"></div>'
+      +'<div class="cs-core"></div>'
+      +'<div class="cs-shockwave" style="--dur:4s;--delay:0s;"></div>'
+      +'<div class="cs-shockwave" style="--dur:4s;--delay:1s;"></div>'
+      +'<div class="cs-shockwave" style="--dur:4s;--delay:2s;"></div>'
+      +'<div class="cs-shockwave" style="--dur:4s;--delay:3s;"></div>'
+      +'<div id="csRadStreaks"></div>'
+      +'<div id="csRadParticles"></div>'
+      +'<div class="cs-title">'
+      +'<div class="cs-sub" style="font-size:.78rem;letter-spacing:.7em;opacity:.95;">YOU HAVE WITNESSED THE</div>'
+      +'<div class="cs-word">RADIANT</div>'
+      +'<div class="cs-coins">'+(replay?'Replaying':'+'+fmt(earned||COIN_REWARDS.Radiant)+'\uD83E\uDE99')+'</div>'
+      +'<div class="cs-sub" style="font-size:.85rem;margin-top:8px;font-style:italic;letter-spacing:.25em;opacity:.9;">'+radFlavor+'</div>'
+      +'</div>'
+      +'<div class="cs-skip" style="color:rgba(255,255,255,.85);text-shadow:0 0 12px rgba(255,255,255,.6);">click anywhere to close</div>';
+    spawnRadiantStreaks('csRadStreaks');
+    spawnRadiantParticles('csRadParticles');
+    csTimer=setTimeout(()=>closeCutscene(),14000);
   } else {
     // ??? cutscene
     cs.className='active cs-unknown';
@@ -2181,6 +2302,44 @@ function spawnVoidParticles(containerId){
   }
 }
 
+function spawnRadiantStreaks(containerId){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  for(let i=0;i<28;i++){
+    const s=document.createElement('div');
+    s.className='cs-rad-streak';
+    const angle=(360/28)*i+Math.random()*8;
+    const len=240+Math.random()*420;
+    const dur=(1.4+Math.random()*1.8).toFixed(2)+'s';
+    const delay=(Math.random()*2.4).toFixed(2)+'s';
+    const w=(1+Math.random()*2.5).toFixed(1);
+    s.style.cssText='transform:rotate('+angle+'deg);width:'+w+'px;--len:'+len+'px;--dur:'+dur+';--delay:'+delay+';';
+    el.appendChild(s);
+  }
+}
+
+function spawnRadiantParticles(containerId){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  const cx=window.innerWidth/2, cy=window.innerHeight/2;
+  const palette=['#ffffff','#fff0c8','#ffd1a0','#ffb0d8','#c8e0ff','#d8c0ff','#c0ffd8','#fff8b0'];
+  for(let i=0;i<70;i++){
+    const p=document.createElement('div');
+    p.className='cs-rad-particle';
+    const size=2+Math.random()*6;
+    const angle=Math.random()*Math.PI*2;
+    const dist=200+Math.random()*Math.max(window.innerWidth,window.innerHeight)*0.6;
+    const tx=Math.cos(angle)*dist;
+    const ty=Math.sin(angle)*dist;
+    const dur=(2+Math.random()*3.5).toFixed(2)+'s';
+    const delay=(Math.random()*4).toFixed(2)+'s';
+    const col=palette[Math.floor(Math.random()*palette.length)];
+    p.style.cssText='left:'+cx+'px;top:'+cy+'px;width:'+size+'px;height:'+size+'px;background:'+col
+      +';box-shadow:0 0 '+(size*5)+'px '+col+',0 0 '+(size*10)+'px rgba(255,255,255,.5);--tx:'+tx+'px;--ty:'+ty+'px;--dur:'+dur+';--delay:'+delay+';';
+    el.appendChild(p);
+  }
+}
+
 function closeCutscene(){
   clearTimeout(csTimer);
   const cs=document.getElementById('cutscene');
@@ -2194,10 +2353,12 @@ function renderCsIndex(){
   const tc=(state.ltTranscendents||0)+(state.transcendents||0);
   const uc=(state.ltUnknowns||0)+(state.unknowns||0);
   const vc=(state.ltVoids||0)+(state.voids||0);
+  const rc=(state.ltRadiants||0)+(state.radiants||0);
   const entries=[
     {rarity:'Transcendent',cls:'trans-card',nameCls:'trans-name',icon:'&#x2747;',desc:'A golden explosion of light. Rays. Stars. Warmth.',count:tc,label:'Transcendents rolled'},
     {rarity:'???',cls:'unk-card',nameCls:'unk-name',icon:'&#x2753;',desc:'Blackness. Cracks. A glitch in everything.',count:uc,label:'??? rolled'},
     {rarity:'Void',cls:'void-card',nameCls:'void-name',icon:'&#x25FE;',desc:'A singularity. Everything is pulled inward. Nothing escapes.',count:vc,label:'Voids rolled'},
+    {rarity:'Radiant',cls:'rad-card',nameCls:'rad-name',icon:'&#x2728;',desc:'A prismatic supernova. Pure light, every color at once.',count:rc,label:'Radiants rolled'},
   ];
   grid.innerHTML=entries.map(e=>{
     const unlocked=seen[e.rarity]||e.count>0;
