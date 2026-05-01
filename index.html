@@ -972,25 +972,6 @@ const SHOP_ITEMS = [
      {cost:1500000000000, coinMult:180.0, label:'x180 coins'},
      {cost:6000000000000, coinMult:240.0, label:'x240 coins'},
    ]},
-  {id:'starFragment',type:'flatCoins',name:'Star dust',desc:"More coins per roll..",icon:'&#x2B50;',
-   levels:[
-     {cost:200,           flatCoins:3,        label:'+3/roll'},
-     {cost:900,           flatCoins:10,       label:'+10/roll'},
-     {cost:3500,          flatCoins:30,       label:'+30/roll'},
-     {cost:15000,         flatCoins:100,      label:'+100/roll'},
-     {cost:200000,        flatCoins:300,      label:'+300/roll'},
-     {cost:1000000,       flatCoins:1000,     label:'+1000/roll'},
-     {cost:5000000,       flatCoins:3000,     label:'+3,000/roll'},
-     {cost:25000000,      flatCoins:9000,     label:'+9,000/roll'},
-     {cost:120000000,     flatCoins:25000,    label:'+25,000/roll'},
-     {cost:600000000,     flatCoins:70000,    label:'+70,000/roll'},
-     {cost:3000000000,    flatCoins:200000,   label:'+200,000/roll'},
-     {cost:15000000000,   flatCoins:550000,   label:'+550,000/roll'},
-     {cost:75000000000,   flatCoins:1500000,  label:'+1.5M/roll'},
-     {cost:350000000000,  flatCoins:4000000,  label:'+4M/roll'},
-     {cost:1500000000000, flatCoins:11000000, label:'+11M/roll'},
-     {cost:6000000000000, flatCoins:30000000, label:'+30M/roll'},
-   ]},
   {id:'potionSmall',type:'consumable',potionType:'small',name:'Weak Luck Vial',desc:'+40% luck for 5 rolls.',icon:'&#x1F9EA;',
    levels:[{cost:50,qty:1,label:'Buy x1'},{cost:130,qty:3,label:'Buy x3'},{cost:300,qty:8,label:'Buy x8'}],repeatable:true},
   {id:'potionMedium',type:'consumable',potionType:'medium',name:'Brewed Luck Vial',desc:'+60% luck for 8 rolls.',icon:'&#x2697;&#xFE0F;',
@@ -1016,6 +997,39 @@ const REBIRTH_SHOP_ITEMS = [
   {id:'autoRebirth',   name:'Auto Ascend',      icon:'&#x1F504;', cost:15,    desc:'Automatically rebirths when you qualify. Toggle ON/OFF.'},
   {id:'fastAutoRebirth',name:'Fast Auto Ascend',icon:'&#x26A1;&#x1F504;', cost:5000, desc:'Rebirths instantly the millisecond you qualify.'},
   {id:'unlockBrewing', name:'Unlock Brewing',   icon:'&#x2697;&#xFE0F;', cost:10000, desc:'Unlocks the Potion Brewing tab. Brew powerful potions from rare materials.'},
+  {id:'starDust',name:'Star Dust',icon:'&#x2B50;',desc:'More coins per roll. Rebirth upgrade with 30 levels.',type:'leveled',
+   levels:[
+    {cost:1,flatCoins:5,label:'+5/roll'},
+    {cost:2,flatCoins:7,label:'+7/roll'},
+    {cost:3,flatCoins:9,label:'+9/roll'},
+    {cost:6,flatCoins:12,label:'+12/roll'},
+    {cost:10,flatCoins:17,label:'+17/roll'},
+    {cost:18,flatCoins:22,label:'+22/roll'},
+    {cost:32,flatCoins:30,label:'+30/roll'},
+    {cost:58,flatCoins:41,label:'+41/roll'},
+    {cost:103,flatCoins:55,label:'+55/roll'},
+    {cost:184,flatCoins:74,label:'+74/roll'},
+    {cost:329,flatCoins:101,label:'+101/roll'},
+    {cost:588,flatCoins:136,label:'+136/roll'},
+    {cost:1050,flatCoins:183,label:'+183/roll'},
+    {cost:1874,flatCoins:247,label:'+247/roll'},
+    {cost:3347,flatCoins:334,label:'+334/roll'},
+    {cost:5976,flatCoins:451,label:'+451/roll'},
+    {cost:10670,flatCoins:609,label:'+609/roll'},
+    {cost:19051,flatCoins:822,label:'+822/roll'},
+    {cost:34015,flatCoins:1109,label:'+1,109/roll'},
+    {cost:60734,flatCoins:1497,label:'+1,497/roll'},
+    {cost:108441,flatCoins:2021,label:'+2,021/roll'},
+    {cost:193621,flatCoins:2729,label:'+2,729/roll'},
+    {cost:345710,flatCoins:3684,label:'+3,684/roll'},
+    {cost:617266,flatCoins:4973,label:'+4,973/roll'},
+    {cost:1102127,flatCoins:6714,label:'+6,714/roll'},
+    {cost:1967847,flatCoins:9064,label:'+9,064/roll'},
+    {cost:3513590,flatCoins:12236,label:'+12,236/roll'},
+    {cost:6273511,flatCoins:16519,label:'+16,519/roll'},
+    {cost:11201349,flatCoins:22301,label:'+22,301/roll'},
+    {cost:20000000,flatCoins:30106,label:'+30,106/roll'}
+   ]},
 ];
 
 const KEY = 'rarityRoller4';
@@ -1081,8 +1095,8 @@ function getCoinMult(){
   return shopMult*rebirthMult*rsRainMult;
 }
 function getFlatCoins(){
-  const lvl=state.upgrades['starFragment']||0;
-  return lvl>0?SHOP_ITEMS.find(i=>i.id==='starFragment').levels[lvl-1].flatCoins:0;
+  const lvl=state.rebirthShop&&state.rebirthShop.starDust||0;
+  if(lvl<=0) return 0; const item=REBIRTH_SHOP_ITEMS.find(i=>i.id==='starDust'); return item?item.levels[Math.min(lvl,item.levels.length)-1].flatCoins:0;
 }
 function getWeights(){
   let w=[...BASE_W];
@@ -1227,7 +1241,19 @@ function doRebirth(){
 // ── REBIRTH SHOP ──
 function buyRebirthItem(id){
   const item=REBIRTH_SHOP_ITEMS.find(i=>i.id===id);
-  if(!item||state.rebirthShop[id]){ toast(state.rebirthShop[id]?'Already have it!':'?'); return; }
+  if(!item){ toast('?'); return; }
+  if(item.type==='leveled'){
+    const curLvl=state.rebirthShop[id]||0;
+    if(curLvl>=item.levels.length){ toast('Already maxed!'); return; }
+    const lvlData=item.levels[curLvl];
+    if((state.rebirthTokens||0)<lvlData.cost){ toast('Not enough tokens.'); return; }
+    state.rebirthTokens-=lvlData.cost;
+    state.rebirthShop[id]=curLvl+1;
+    save(); updateAutoRoll(); renderAll();
+    toast('Upgraded '+item.name+' to Lv.'+(curLvl+1)+'!');
+    return;
+  }
+  if(state.rebirthShop[id]){ toast('Already have it!'); return; }
   if(id==='rareBlocker' && !state.rebirthShop.fortunesSon){ toast('Need Common Blocker first.'); return; }
   if(id==='legendBlocker' && !state.rebirthShop.rareBlocker){ toast('Need Rare+Epic Blocker first.'); return; }
   if((state.rebirthTokens||0)<item.cost){ toast('Not enough tokens.'); return; }
@@ -1592,11 +1618,24 @@ function renderRebirthShop(){
   const rebirthOn=state.autoRebirthEnabled!==false;
 
   document.getElementById('rebirthShopGrid').innerHTML=REBIRTH_SHOP_ITEMS.map(item=>{
+    if(item.type==='leveled'){
+      const curLvl=rs[item.id]||0;
+      const maxed=curLvl>=item.levels.length;
+      const lvlData=!maxed?item.levels[curLvl]:item.levels[item.levels.length-1];
+      const prevLabel=curLvl>0?item.levels[curLvl-1].label:'—';
+      let right='';
+      if(maxed){
+        right='<span class="rs-owned-tag">MAX (Lv.'+curLvl+')</span>';
+      } else {
+        right='<button class="rs-buy-btn" onclick="buyRebirthItem(\''+item.id+'\')" '+(tokens<lvlData.cost?'disabled':'')+'>💎'+fmt(lvlData.cost)+'</button>';
+      }
+      const info=maxed?'Lv.'+curLvl+' — '+prevLabel:'Lv.'+curLvl+'/'+item.levels.length+(curLvl>0?' ('+prevLabel+')':'')+' → '+lvlData.label;
+      return '<div class="rs-item'+(maxed?' owned':'')+'"><div class="rs-item-icon">'+item.icon+'</div><div class="rs-item-info"><div class="rs-item-name">'+item.name+'</div><div class="rs-item-desc">'+item.desc+'<br><span style="color:#b080e0;font-size:.6rem;">'+info+'</span></div></div>'+right+'</div>';
+    }
     const owned=!!rs[item.id];
     let right='';
     if(owned){
       if(item.group==='autoRoll' && hasAnyAutoRoll && item.id===getActiveAutoRollId()){
-        // show toggle for the active auto roll tier
         right='<button class="rs-toggle-btn '+(rollOn?'on':'')+'" onclick="toggleAutoRoll()">'+(rollOn?'ON':'OFF')+'</button>';
       } else if(item.id==='autoRebirth'||item.id==='fastAutoRebirth'){
         right='<button class="rs-toggle-btn '+(rebirthOn?'on':'')+'" onclick="toggleAutoRebirth()">'+(rebirthOn?'ON':'OFF')+'</button>';
@@ -1604,7 +1643,7 @@ function renderRebirthShop(){
         right='<span class="rs-owned-tag">OWNED</span>';
       }
     } else {
-      right='<button class="rs-buy-btn" onclick="buyRebirthItem(\''+item.id+'\')" '+((tokens<item.cost)?'disabled':'')+'>&#x1F48E;'+item.cost+'</button>';
+      right='<button class="rs-buy-btn" onclick="buyRebirthItem(\''+item.id+'\')" '+(tokens<item.cost?'disabled':'')+'>💎'+fmt(item.cost)+'</button>';
     }
     return '<div class="rs-item'+(owned?' owned':'')+'"><div class="rs-item-icon">'+item.icon+'</div><div class="rs-item-info"><div class="rs-item-name">'+item.name+'</div><div class="rs-item-desc">'+item.desc+'</div></div>'+right+'</div>';
   }).join('');
