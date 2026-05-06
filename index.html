@@ -507,6 +507,7 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
     <button class="tab-btn" onclick="switchTab('achievements')">&#x1F3C5; Achievements</button>
     <button class="tab-btn" onclick="switchTab('index')">&#x1F4FA; Index</button>
     <button class="tab-btn" id="brewingTabBtn" onclick="switchTab('brewing')">&#x1F512; Brewing</button>
+    <button class="tab-btn" id="miningTabBtn" onclick="switchTab('mining')">&#x1F512; Mining</button>
   </div>
 
   <!-- GAME TAB -->
@@ -753,6 +754,43 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
     </div>
   </div><!-- end brewing tab -->
 
+  <!-- MINING TAB -->
+  <div id="tabMining" class="tab-content">
+    <div class="panel" id="miningLockedPanel" style="text-align:center;padding:40px 20px;">
+      <div style="font-size:3rem;margin-bottom:12px;">&#x1F512;</div>
+      <div style="font-family:'Cinzel Decorative',cursive;font-size:1rem;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;">Mining Locked</div>
+      <div style="font-size:.75rem;color:var(--muted);font-style:italic;">Buy <strong style="color:#c08040;">Unlock Mining</strong> in the Rebirth Shop to start swinging.</div>
+    </div>
+    <div class="panel" id="miningUnlockedPanel" style="display:none;flex-direction:column;gap:14px;">
+      <div class="panel-title">&#x26CF;&#xFE0F; Mining</div>
+      <div style="font-size:.72rem;color:var(--muted);font-style:italic;">Click the rock to swing. Each rock has a tier — bigger rocks take more hits but drop better runes. Equip up to your slot limit.</div>
+
+      <!-- Rock display -->
+      <div id="rockArea" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px;background:linear-gradient(180deg,#0d0a08,#08070a);border:1px solid #2a1a10;border-radius:12px;">
+        <div id="rockTier" style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.18em;color:#a07050;text-transform:uppercase;">Stone Rock</div>
+        <button id="rockBtn" onclick="swingPick()" style="font-size:5rem;background:transparent;border:none;cursor:pointer;line-height:1;transition:transform .08s;user-select:none;">&#x1FAA8;</button>
+        <div style="width:80%;height:14px;background:#0a0a0a;border:1px solid #3a2a18;border-radius:8px;overflow:hidden;">
+          <div id="rockHpBar" style="height:100%;width:100%;background:linear-gradient(90deg,#c08040,#e0a060);transition:width .15s;"></div>
+        </div>
+        <div id="rockHpText" style="font-family:'Cinzel',serif;font-size:.6rem;color:#a07050;letter-spacing:.1em;">100 / 100</div>
+        <div style="font-size:.6rem;color:var(--muted);">Swings: <span id="mineSwings">0</span> &nbsp;|&nbsp; Rocks broken: <span id="rocksBroken">0</span></div>
+      </div>
+
+      <!-- Equipped runes -->
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;color:var(--muted);margin-bottom:6px;">EQUIPPED RUNES <span id="runeSlotInfo" style="float:right;color:#80c080;"></span></div>
+        <div id="equippedRunes" style="display:flex;gap:6px;flex-wrap:wrap;min-height:48px;padding:8px;background:#08070a;border:1px dashed #2a1a30;border-radius:8px;"></div>
+      </div>
+
+      <!-- Inventory -->
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;color:var(--muted);margin-bottom:6px;">RUNE INVENTORY</div>
+        <div id="runeInventory" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;"></div>
+      </div>
+    </div>
+  </div><!-- end mining tab -->
+
+
 </div><!-- end app -->
 
 <!-- MINIGAME OVERLAY -->
@@ -886,8 +924,6 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.3rem,4vw,2rem);text
           <option value="&#x1F5FF;">&#x1F5FF;</option>
           <option value="Transcendent">Transcendent</option>
           <option value="???">???</option>
-          <option value="Void">/Void</option>
-          <option value="Radiant">Radiant</option>
         </select>
         <button class="admin-apply-btn" onclick="adminForceRoll()">Set</button>
       </div>
@@ -953,7 +989,7 @@ function safeClass(r){ return r==='\uD83D\uDDFF'?'Moai':r==='???'?'Unknown':r; }
 const REBIRTH_BASE = [300,1000,3000,8000,20000,60000,150000];
 
 const SHOP_ITEMS = [
-  {id:'luck1',type:'luck',name:'Lucky Charm',desc:"Apparently these things do something.",icon:'&#x1F340;',
+   {id:'luck1',type:'luck',name:'Lucky Charm',desc:"A four-leaf clover. Probably stolen from a leprechaun, but hey — luck is luck.",icon:'&#x1F340;',
    levels:[
      {cost:30,        luckBonus:5,    label:'+5% luck'},
      {cost:500,       luckBonus:20,   label:'+20% luck'},
@@ -971,7 +1007,7 @@ const SHOP_ITEMS = [
      {cost:8000000000,luckBonus:1350, label:'+1350% luck'},
      {cost:30000000000,luckBonus:1650,label:'+1650% luck'},
    ]},
-  {id:'luck2',type:'luck',name:'Carved Rune',desc:"Your grandma wants you to buy this random relic off of her",icon:'&#x1F52E;',
+   {id:'luck2',type:'luck',name:'Carved Rune',desc:"Grandma swore this thing was cursed. You bought it anyway. So far, only good things have happened.",icon:'&#x1F52E;',
    levels:[
      {cost:200,         luckBonus:10,   label:'+10% luck'},
      {cost:1000,        luckBonus:30,   label:'+30% luck'},
@@ -990,7 +1026,7 @@ const SHOP_ITEMS = [
      {cost:300000000000,luckBonus:2200, label:'+2200% luck'},
      {cost:1200000000000,luckBonus:2600,label:'+2600% luck'},
    ]},
-  {id:'luck3',type:'luck',name:'Third Eye',desc:"Having a third eye causes you to become more addicted, increasing luck",icon:'&#x1F441;',
+   {id:'luck3',type:'luck',name:'Third Eye',desc:"Opens a third eye somewhere on your forehead. You can't unsee it. The good news? You see luck coming a mile away.",icon:'&#x1F441;',
    levels:[
      {cost:150,        luckBonus:15,   label:'+15% luck'},
      {cost:400,        luckBonus:30,   label:'+30% luck'},
@@ -1008,7 +1044,7 @@ const SHOP_ITEMS = [
      {cost:5000000000, luckBonus:1570, label:'+1570% luck'},
      {cost:20000000000,luckBonus:1860, label:'+1860% luck'},
    ]},
-  {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"More money",icon:'&#x1F4B0;',
+   {id:'coinBoost',type:'coinMult',name:'Heavy Pockets',desc:"Bigger pockets, more room for coins. Simple economics, really.",icon:'&#x1F4B0;',
    levels:[
      {cost:40,            coinMult:1.5,   label:'x1.5 coins'},
      {cost:500,           coinMult:2.0,   label:'x2.0 coins'},
@@ -1026,33 +1062,96 @@ const SHOP_ITEMS = [
      {cost:350000000000,  coinMult:135.0, label:'x135 coins'},
      {cost:1500000000000, coinMult:180.0, label:'x180 coins'},
      {cost:6000000000000, coinMult:240.0, label:'x240 coins'},
-   ]},
-  {id:'potionSmall',type:'consumable',potionType:'small',name:'Weak Luck Vial',desc:'+40% luck for 5 rolls.',icon:'&#x1F9EA;',
+    ]},
+   {id:'luck4',type:'luck',name:"Rabbit's Foot",desc:"Probably belonged to a very unlucky rabbit. The luck had to go somewhere.",icon:'&#x1F407;',
+    levels:[
+      {cost:5000,       luckBonus:25,   label:'+25% luck'},
+      {cost:25000,      luckBonus:60,   label:'+60% luck'},
+      {cost:120000,     luckBonus:120,  label:'+120% luck'},
+      {cost:600000,     luckBonus:200,  label:'+200% luck'},
+      {cost:3000000,    luckBonus:310,  label:'+310% luck'},
+      {cost:15000000,   luckBonus:450,  label:'+450% luck'},
+      {cost:75000000,   luckBonus:620,  label:'+620% luck'},
+      {cost:350000000,  luckBonus:830,  label:'+830% luck'},
+      {cost:1500000000, luckBonus:1080, label:'+1080% luck'},
+      {cost:6000000000, luckBonus:1380, label:'+1380% luck'},
+      {cost:24000000000,luckBonus:1730, label:'+1730% luck'},
+      {cost:90000000000,luckBonus:2150, label:'+2150% luck'},
+    ]},
+   {id:'coinBoost2',type:'coinMult',name:'Treasure Map',desc:"You found it stuffed in a library book. The X marks every roll.",icon:'&#x1F5FA;&#xFE0F;',
+    levels:[
+      {cost:2500,         coinMult:1.4,   label:'x1.4 coins'},
+      {cost:15000,        coinMult:1.8,   label:'x1.8 coins'},
+      {cost:80000,        coinMult:2.4,   label:'x2.4 coins'},
+      {cost:400000,       coinMult:3.2,   label:'x3.2 coins'},
+      {cost:2000000,      coinMult:4.5,   label:'x4.5 coins'},
+      {cost:10000000,     coinMult:6.5,   label:'x6.5 coins'},
+      {cost:50000000,     coinMult:9.5,   label:'x9.5 coins'},
+      {cost:250000000,    coinMult:14.0,  label:'x14 coins'},
+      {cost:1200000000,   coinMult:21.0,  label:'x21 coins'},
+      {cost:6000000000,   coinMult:32.0,  label:'x32 coins'},
+      {cost:30000000000,  coinMult:50.0,  label:'x50 coins'},
+      {cost:150000000000, coinMult:80.0,  label:'x80 coins'},
+    ]},
+   {id:'pitySpeed',type:'pity',name:'Pity Stone',desc:"A small black rock that hums when you've gone too long without something good. Speeds up pity timers.",icon:'&#x1FAA8;',
+    levels:[
+      {cost:50000,    pityMult:1.10, label:'+10% pity speed'},
+      {cost:500000,   pityMult:1.20, label:'+20% pity speed'},
+      {cost:5000000,  pityMult:1.35, label:'+35% pity speed'},
+      {cost:50000000, pityMult:1.55, label:'+55% pity speed'},
+      {cost:500000000,pityMult:1.80, label:'+80% pity speed'},
+      {cost:5000000000,pityMult:2.10,label:'+110% pity speed'},
+      {cost:50000000000,pityMult:2.50,label:'+150% pity speed'},
+      {cost:500000000000,pityMult:3.00,label:'+200% pity speed'},
+    ]},
+   {id:'potionSmall',type:'consumable',potionType:'small',name:'Weak Luck Vial',desc:'Bottled four-leaf-clover juice. Lasts about 5 rolls before wearing off.',icon:'&#x1F9EA;',
    levels:[{cost:50,qty:1,label:'Buy x1'},{cost:130,qty:3,label:'Buy x3'},{cost:300,qty:8,label:'Buy x8'}],repeatable:true},
-  {id:'potionMedium',type:'consumable',potionType:'medium',name:'Brewed Luck Vial',desc:'+60% luck for 8 rolls.',icon:'&#x2697;&#xFE0F;',
+  {id:'potionMedium',type:'consumable',potionType:'medium',name:'Brewed Luck Vial',desc:'Tastes like cinnamon and bad decisions. Lasts 8 rolls.',icon:'&#x2697;&#xFE0F;',
    levels:[{cost:200,qty:1,label:'Buy x1'},{cost:520,qty:3,label:'Buy x3'},{cost:1100,qty:8,label:'Buy x8'}],repeatable:true},
-  {id:'potionLarge',type:'consumable',potionType:'large',name:'Strong Luck Vial',desc:'+80% luck for 12 rolls.',icon:'&#x1F525;',
+  {id:'potionLarge',type:'consumable',potionType:'large',name:'Strong Luck Vial',desc:'Glows in the dark. Lasts 12 rolls and a faint glow lingers for a while after.',icon:'&#x1F525;',
    levels:[{cost:500,qty:1,label:'Buy x1'},{cost:1300,qty:3,label:'Buy x3'},{cost:2800,qty:8,label:'Buy x8'}],repeatable:true},
-  {id:'doubleCoins',type:'consumable',potionType:'dc',name:'Coin Magnet',desc:'Next 2 rolls pull in double coins.',icon:'&#x1F9F2;',
+  {id:'doubleCoins',type:'consumable',potionType:'dc',name:'Coin Magnet',desc:'Stick it in your pocket and watch coins fly toward you for the next couple of rolls.',icon:'&#x1F9F2;',
    levels:[{cost:3000,qty:2,label:'Buy (2 rolls)'},{cost:7000,qty:6,label:'Buy (6 rolls)'},{cost:18000,qty:16,label:'Buy (16 rolls)'}],repeatable:true},
 ];
 
 const REBIRTH_SHOP_ITEMS = [
-  {id:'slowAutoRoll',  name:'Slow auto roll',   icon:'&#x1F40C;', cost:1,     desc:'Rolls on its own every 3 seconds.',       group:'autoRoll'},
-  {id:'autoPotionUse', name:'Auto potion use',  icon:'&#x1F916;', cost:1,     desc:'Uses your best luck potion automatically when it runs out.'},
-  {id:'luckForever',   name:'Blessed Forever',  icon:'&#x267E;&#xFE0F;', cost:3, desc:'+50% luck, forever.'},
-  {id:'autoRoll',      name:'Auto roll',        icon:'&#x26A1;',  cost:5,     desc:'Rolls automatically every second.',       group:'autoRoll'},
-  {id:'fastAutoRoll',  name:'Fast auto roll',   icon:'&#x1F680;', cost:10,    desc:'Rolls 3 times a second.',                 group:'autoRoll'},
-  {id:'ultraAutoRoll', name:'Giga roller',      icon:'&#x1F4A5;', cost:20,    desc:'Rolls 10 times a second.',                group:'autoRoll'},
-  {id:'omegaAutoRoll', name:'Omega roller',     icon:'&#x1F300;', cost:15000, desc:'Rolls 50 times a second.',                group:'autoRoll'},
-  {id:'coinRain',      name:'Gold Shower',      icon:'&#x1F327;&#xFE0F;', cost:2, desc:'+25% on all coin drops, every roll, forever.'},
-  {id:'fortunesSon',   name:'Common Blocker',   icon:'&#x1F9E7;', cost:250,     desc:'Bans Common and Uncommon from ever being rolled.'},
-  {id:'rareBlocker',   name:'Rare+Epic Blocker',icon:'&#x1F6AB;', cost:5000,    desc:'Bans Rare and Epic from ever being rolled. Requires Common Blocker.'},
-  {id:'legendBlocker', name:'Legendary Blocker',icon:'&#x26D4;',  cost:50000,   desc:'Bans Legendary from ever being rolled. Requires Rare+Epic Blocker.'},
-  {id:'mythicalBlocker',name:'Mythical Blocker',icon:'&#x1F4A0;', cost:500000,  desc:'Bans Mythical from ever being rolled. Requires Legendary Blocker.'},
-  {id:'autoRebirth',   name:'Auto Ascend',      icon:'&#x1F504;', cost:15,    desc:'Automatically rebirths when you qualify. Toggle ON/OFF.'},
-  {id:'fastAutoRebirth',name:'Fast Auto Ascend',icon:'&#x26A1;&#x1F504;', cost:5000, desc:'Rebirths instantly the millisecond you qualify.'},
-  {id:'unlockBrewing', name:'Unlock Brewing',   icon:'&#x2697;&#xFE0F;', cost:10000, desc:'Unlocks the Potion Brewing tab. Brew powerful potions from rare materials.'},
+  {id:'slowAutoRoll',  name:'Slow auto roll',   icon:'&#x1F40C;', cost:1,     desc:"For when you want to take it easy. Rolls every 3 seconds — perfect for sipping tea.", group:'autoRoll'},
+  {id:'autoPotionUse', name:'Auto potion use',  icon:'&#x1F916;', cost:1,     desc:"You forget to use your potions. We get it. Now they pop themselves the moment one wears off."},
+  {id:'luckForever',   name:'Blessed Forever',  icon:'&#x267E;&#xFE0F;', cost:3, desc:"A small, permanent +50% luck. Like being born under a slightly better star."},
+  {id:'autoRoll',      name:'Auto roll',        icon:'&#x26A1;',  cost:5,     desc:"Hands-free rolling, once per second. Go grab a snack.", group:'autoRoll'},
+  {id:'fastAutoRoll',  name:'Fast auto roll',   icon:'&#x1F680;', cost:10,    desc:"Three rolls a second. The wrist break you didn't know you needed.", group:'autoRoll'},
+  {id:'ultraAutoRoll', name:'Giga roller',      icon:'&#x1F4A5;', cost:20,    desc:"Ten rolls per second. Numbers start to blur together.", group:'autoRoll'},
+  {id:'omegaAutoRoll', name:'Omega roller',     icon:'&#x1F300;', cost:15000, desc:"Fifty rolls per second. At this point you're just watching slot machines from a distance.", group:'autoRoll'},
+  {id:'coinRain',      name:'Gold Shower',      icon:'&#x1F327;&#xFE0F;', cost:2, desc:"+25% coins on every single roll. Forever. The clouds opened and dropped a piggy bank."},
+  {id:'fortunesSon',   name:'Common Blocker',   icon:'&#x1F9E7;', cost:250,     desc:"Permanently blocks Common and Uncommon rolls. You're done with the boring stuff."},
+  {id:'rareBlocker',   name:'Rare+Epic Blocker',icon:'&#x1F6AB;', cost:5000,    desc:"Blocks Rare and Epic too. Why settle? Needs the Common Blocker first."},
+  {id:'legendBlocker', name:'Legendary Blocker',icon:'&#x26D4;',  cost:50000,   desc:"Skip Legendaries entirely. Requires the Rare+Epic Blocker."},
+  {id:'mythicalBlocker',name:'Mythical Blocker',icon:'&#x1F4A0;', cost:500000,  desc:"Even Mythicals aren't worth your time anymore. Requires the Legendary Blocker."},
+  {id:'autoRebirth',   name:'Auto Ascend',      icon:'&#x1F504;', cost:15,    desc:"Rebirths for you the moment you qualify. You can toggle it off if you want to wait."},
+  {id:'fastAutoRebirth',name:'Fast Auto Ascend',icon:'&#x26A1;&#x1F504;', cost:5000, desc:"Rebirths the literal millisecond you can. Don't blink."},
+  {id:'unlockBrewing', name:'Unlock Brewing',   icon:'&#x2697;&#xFE0F;', cost:10000, desc:"Opens the Brewing tab. Turn rare materials into potions worth bragging about."},
+  {id:'unlockMining',  name:'Unlock Mining',    icon:'&#x26CF;&#xFE0F;', cost:25000, desc:"Opens the Mining tab. Swing a pickaxe at the rocks of the world and dig up runes that bend the rules."},
+  {id:'mineSpeed',name:'Sharper Pickaxe',icon:'&#x1FAA8;',desc:"Each level swings your pickaxe a little faster. Stacks up fast.",type:'leveled',
+   levels:[
+    {cost:50,  speedMult:1.15, label:'+15% mine speed'},
+    {cost:150, speedMult:1.35, label:'+35% mine speed'},
+    {cost:400, speedMult:1.60, label:'+60% mine speed'},
+    {cost:1200,speedMult:2.00, label:'+100% mine speed'},
+    {cost:4000,speedMult:2.50, label:'+150% mine speed'},
+    {cost:12000,speedMult:3.20,label:'+220% mine speed'},
+    {cost:40000,speedMult:4.20,label:'+320% mine speed'},
+    {cost:120000,speedMult:5.50,label:'+450% mine speed'},
+    {cost:400000,speedMult:7.50,label:'+650% mine speed'},
+    {cost:1200000,speedMult:10.0,label:'+900% mine speed'},
+   ]},
+  {id:'runeSlots',name:'Rune Holder',icon:'&#x1F517;',desc:"Lets you keep one more rune equipped at a time. Stacks.",type:'leveled',
+   levels:[
+    {cost:200, slots:1, label:'+1 rune slot (2 total)'},
+    {cost:1500,slots:2, label:'+2 rune slots (3 total)'},
+    {cost:8000,slots:3, label:'+3 rune slots (4 total)'},
+    {cost:40000,slots:4,label:'+4 rune slots (5 total)'},
+    {cost:200000,slots:5,label:'+5 rune slots (6 total)'},
+   ]},
   {id:'starDust',name:'Star Dust',icon:'&#x2B50;',desc:'More coins per roll. Rebirth upgrade with 30 levels.',type:'leveled',
    levels:[
     {cost:1,flatCoins:5,label:'+5/roll'},
@@ -1119,6 +1218,8 @@ function defaultState(){
     brewDurationMs:null,
     minigameDone:false,
     nextRollForced:null,
+    rockHp:null,rockTier:0,rocksBroken:0,mineSwings:0,
+    runeInventory:[],equippedRunes:[],
   };
 }
 function load(){
@@ -1140,15 +1241,20 @@ function getUpgradeLuck(){
 }
 function getPotionLuck(){ return state.potionRollsLeft>0?(state.potionLuckValue||0):0; }
 function getTotalLuck(){
+  let coinBoost2Luck=0; // unused
   return getUpgradeLuck()+getPotionLuck()+(state.rebirthLuckBonus||0)
-    +((state.rebirthShop&&state.rebirthShop.luckForever)?50:0)+(adminLuckBonus||0);
+    +((state.rebirthShop&&state.rebirthShop.luckForever)?50:0)+(adminLuckBonus||0)
+    +getRuneLuckBonus();
 }
 function getCoinMult(){
   const lvl=state.upgrades['coinBoost']||0;
   const shopMult=lvl>0?SHOP_ITEMS.find(i=>i.id==='coinBoost').levels[lvl-1].coinMult:1;
+  const lvl2=state.upgrades['coinBoost2']||0;
+  const shopMult2=lvl2>0?SHOP_ITEMS.find(i=>i.id==='coinBoost2').levels[lvl2-1].coinMult:1;
   const rebirthMult=1+(state.rebirthCoinBonus||0)/100;
   const rsRainMult=(state.rebirthShop&&state.rebirthShop.coinRain)?1.25:1;
-  return shopMult*rebirthMult*rsRainMult;
+  const runeMult=getRuneCoinMult();
+  return shopMult*shopMult2*rebirthMult*rsRainMult*runeMult;
 }
 function getFlatCoins(){
   const lvl=state.rebirthShop&&state.rebirthShop.starDust||0;
@@ -1350,8 +1456,9 @@ function doRoll(){
     if(state.doubleCoinRolls===0) state.dcActive=false;
   }
   state.coins+=earned; state.totalCoins+=earned; state.rolls++;
-  state.pityTranscendent=(state.pityTranscendent||0)+1;
-  state.pityUnknown=(state.pityUnknown||0)+1;
+  const pityInc=getPityMult();
+  state.pityTranscendent=(state.pityTranscendent||0)+pityInc;
+  state.pityUnknown=(state.pityUnknown||0)+pityInc;
   state.history.unshift({r:result,c:earned});
   if(state.history.length>60) state.history.pop();
   if(!state.highest||rarityRank(result)>rarityRank(state.highest)) state.highest=result;
@@ -1512,9 +1619,10 @@ function updateAutoRoll(){
 function switchTab(name){
   const rs=state.rebirthShop||{};
   if(name==='brewing'&&!(rs.unlockBrewing||rs.potionBrewing)) return;
-  const allTabs=['game','leaderboard','achievements','index','brewing'];
+  if(name==='mining'&&!rs.unlockMining) return;
+  const allTabs=['game','leaderboard','achievements','index','brewing','mining'];
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',allTabs[i]===name));
-  ['tabGame','tabLeaderboard','tabAchievements','tabIndex','tabBrewing'].forEach((id,i)=>{
+  ['tabGame','tabLeaderboard','tabAchievements','tabIndex','tabBrewing','tabMining'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el) el.classList.toggle('active',allTabs[i]===name);
   });
@@ -1522,6 +1630,7 @@ function switchTab(name){
   if(name==='achievements') renderAchievements();
   if(name==='index'){renderCsIndex();fetchLiveFeed();}
   if(name==='brewing') renderBrewing();
+  if(name==='mining') renderMining();
 }
 let activeLbTab='rolls';
 function switchLbTab(name){
@@ -1588,6 +1697,13 @@ function renderAll(){
     brewBtn.innerHTML=hasBrew?'\u2697\uFE0F Brewing':'\uD83D\uDD12 Brewing';
     brewBtn.style.opacity=hasBrew?'1':'0.5';
     brewBtn.style.cursor=hasBrew?'pointer':'default';
+  }
+  const mineBtn=document.getElementById('miningTabBtn');
+  if(mineBtn){
+    const hasMine=!!(state.rebirthShop&&state.rebirthShop.unlockMining);
+    mineBtn.innerHTML=hasMine?'\u26CF\uFE0F Mining':'\uD83D\uDD12 Mining';
+    mineBtn.style.opacity=hasMine?'1':'0.5';
+    mineBtn.style.cursor=hasMine?'pointer':'default';
   }
 
   document.getElementById('potSmallCount').textContent='\xD7'+(state.potionsSmall||0);
@@ -3055,7 +3171,185 @@ document.addEventListener('DOMContentLoaded', function(){
   checkAchievements();
   checkVersion();
   renderBrewing();
+  renderMining();
 });
+
+// ─────────────────────────── MINING / RUNES ───────────────────────────
+const RUNE_DEFS = {
+  iron:    {name:'Iron Rune',     icon:'&#x26AB;', color:'#9090a0', desc:'A plain little stone. Adds +5% luck.',                bonus:{luck:5}},
+  copper:  {name:'Copper Rune',   icon:'&#x1F7E0;', color:'#c08040', desc:'Smells faintly metallic. Adds +10% coins.',          bonus:{coinMult:1.10}},
+  emerald: {name:'Emerald Rune',  icon:'&#x1F7E2;', color:'#40c060', desc:'Glows with quiet greed. Adds +15% luck.',            bonus:{luck:15}},
+  ruby:    {name:'Ruby Rune',     icon:'&#x1F534;', color:'#e04040', desc:'Warm to the touch. Adds +25% coins.',                bonus:{coinMult:1.25}},
+  sapphire:{name:'Sapphire Rune', icon:'&#x1F535;', color:'#4080e0', desc:'Cold and patient. Speeds up pity timers by +20%.',   bonus:{pity:1.20}},
+  amethyst:{name:'Amethyst Rune', icon:'&#x1F7E3;', color:'#a060e0', desc:'Hums with old magic. Adds +35% luck.',               bonus:{luck:35}},
+  topaz:   {name:'Topaz Rune',    icon:'&#x1F7E1;', color:'#e0c040', desc:'Yellow and very smug. Adds +50% coins.',             bonus:{coinMult:1.50}},
+  obsidian:{name:'Obsidian Rune', icon:'&#x26AB;', color:'#202028', desc:"Drinks the light. Adds +60% luck and +10% coins.",   bonus:{luck:60,coinMult:1.10}},
+  diamond: {name:'Diamond Rune',  icon:'&#x1F48E;', color:'#80f0ff', desc:'Almost too bright to hold. +100% luck and +50% coins.', bonus:{luck:100,coinMult:1.50}},
+  starcore:{name:'Starcore Rune', icon:'&#x2B50;', color:'#ffd060', desc:'A piece of a fallen star. +200% luck, x2 coins.',    bonus:{luck:200,coinMult:2.0}},
+};
+
+const ROCK_TIERS = [
+  {name:'Stone Rock',    icon:'&#x1FAA8;', hp:30,    drops:[['iron',60],['copper',35],['emerald',5]]},
+  {name:'Iron Rock',     icon:'&#x1FAA8;', hp:120,   drops:[['copper',45],['emerald',35],['ruby',15],['sapphire',5]]},
+  {name:'Crystal Rock',  icon:'&#x1F48E;', hp:600,   drops:[['emerald',30],['ruby',30],['sapphire',25],['amethyst',12],['topaz',3]]},
+  {name:'Glowing Rock',  icon:'&#x1F48E;', hp:3000,  drops:[['ruby',25],['sapphire',25],['amethyst',25],['topaz',18],['obsidian',6],['diamond',1]]},
+  {name:'Starforged Rock',icon:'&#x2B50;', hp:18000, drops:[['amethyst',25],['topaz',25],['obsidian',25],['diamond',20],['starcore',5]]},
+];
+
+function getMineSpeed(){
+  const lvl=(state.rebirthShop&&state.rebirthShop.mineSpeed)||0;
+  if(!lvl) return 1;
+  const item=REBIRTH_SHOP_ITEMS.find(i=>i.id==='mineSpeed');
+  return item?item.levels[Math.min(lvl,item.levels.length)-1].speedMult:1;
+}
+function getRuneSlots(){
+  const lvl=(state.rebirthShop&&state.rebirthShop.runeSlots)||0;
+  return 1+(lvl?REBIRTH_SHOP_ITEMS.find(i=>i.id==='runeSlots').levels[Math.min(lvl,5)-1].slots:0);
+}
+function getEquippedDefs(){
+  return (state.equippedRunes||[]).map(k=>RUNE_DEFS[k]).filter(Boolean);
+}
+function getRuneLuckBonus(){
+  return getEquippedDefs().reduce((a,d)=>a+(d.bonus.luck||0),0);
+}
+function getRuneCoinMult(){
+  return getEquippedDefs().reduce((a,d)=>a*(d.bonus.coinMult||1),1);
+}
+function getRunePityMult(){
+  return getEquippedDefs().reduce((a,d)=>a*(d.bonus.pity||1),1);
+}
+function getPityMult(){
+  const lvl=state.upgrades['pitySpeed']||0;
+  const stoneMult=lvl>0?SHOP_ITEMS.find(i=>i.id==='pitySpeed').levels[lvl-1].pityMult:1;
+  return stoneMult*getRunePityMult();
+}
+
+function getCurrentRockTier(){
+  // Unlock new tiers based on rocks broken
+  const broken=state.rocksBroken||0;
+  let tier=0;
+  if(broken>=5) tier=1;
+  if(broken>=20) tier=2;
+  if(broken>=60) tier=3;
+  if(broken>=200) tier=4;
+  return ROCK_TIERS[Math.min(state.rockTier??tier, ROCK_TIERS.length-1)];
+}
+function maxUnlockedTier(){
+  const broken=state.rocksBroken||0;
+  let tier=0;
+  if(broken>=5) tier=1;
+  if(broken>=20) tier=2;
+  if(broken>=60) tier=3;
+  if(broken>=200) tier=4;
+  return tier;
+}
+function ensureRockHp(){
+  if(state.rockTier==null) state.rockTier=0;
+  if(state.rockTier>maxUnlockedTier()) state.rockTier=maxUnlockedTier();
+  const t=ROCK_TIERS[state.rockTier];
+  if(state.rockHp==null||state.rockHp<=0||state.rockHp>t.hp) state.rockHp=t.hp;
+}
+
+function swingPick(){
+  const rs=state.rebirthShop||{};
+  if(!rs.unlockMining) return;
+  ensureRockHp();
+  const t=ROCK_TIERS[state.rockTier];
+  const dmg=Math.max(1,Math.round(getMineSpeed()));
+  state.rockHp-=dmg;
+  state.mineSwings=(state.mineSwings||0)+1;
+  const btn=document.getElementById('rockBtn');
+  if(btn){btn.style.transform='scale(.9) rotate(-8deg)';setTimeout(()=>btn.style.transform='',90);}
+  if(state.rockHp<=0){
+    state.rocksBroken=(state.rocksBroken||0)+1;
+    const drop=pickRuneDrop(t.drops);
+    if(drop){
+      state.runeInventory=state.runeInventory||[];
+      state.runeInventory.push(drop);
+      toast(RUNE_DEFS[drop].icon+' Found '+RUNE_DEFS[drop].name+'!');
+    }
+    state.rockHp=t.hp;
+  }
+  save(); renderMining();
+}
+function pickRuneDrop(drops){
+  const total=drops.reduce((a,d)=>a+d[1],0);
+  let r=Math.random()*total;
+  for(const [k,w] of drops){ r-=w; if(r<=0) return k; }
+  return drops[0][0];
+}
+function setRockTier(t){
+  if(t<0||t>maxUnlockedTier()) return;
+  state.rockTier=t;
+  state.rockHp=ROCK_TIERS[t].hp;
+  save(); renderMining();
+}
+function equipRune(idx){
+  const k=state.runeInventory[idx]; if(!k) return;
+  const slots=getRuneSlots();
+  state.equippedRunes=state.equippedRunes||[];
+  if(state.equippedRunes.length>=slots){toast('All rune slots are full.');return;}
+  state.equippedRunes.push(k);
+  state.runeInventory.splice(idx,1);
+  save(); renderMining(); renderAll();
+}
+function unequipRune(idx){
+  const k=state.equippedRunes[idx]; if(!k) return;
+  state.equippedRunes.splice(idx,1);
+  state.runeInventory=state.runeInventory||[];
+  state.runeInventory.push(k);
+  save(); renderMining(); renderAll();
+}
+function sellRune(idx){
+  const k=state.runeInventory[idx]; if(!k) return;
+  const value=Math.round((RUNE_DEFS[k].bonus.luck||0)*50 + ((RUNE_DEFS[k].bonus.coinMult||1)-1)*5000);
+  state.coins+=Math.max(10,value);
+  state.runeInventory.splice(idx,1);
+  toast('Sold for '+fmt(Math.max(10,value))+' coins.');
+  save(); renderMining(); renderAll();
+}
+
+function renderMining(){
+  const rs=state.rebirthShop||{};
+  const locked=document.getElementById('miningLockedPanel');
+  const unlocked=document.getElementById('miningUnlockedPanel');
+  if(!locked||!unlocked) return;
+  if(!rs.unlockMining){locked.style.display='block';unlocked.style.display='none';return;}
+  locked.style.display='none';unlocked.style.display='flex';
+  ensureRockHp();
+  const t=ROCK_TIERS[state.rockTier];
+  document.getElementById('rockTier').innerHTML=t.name+(maxUnlockedTier()>0?' &nbsp; '+ROCK_TIERS.slice(0,maxUnlockedTier()+1).map((rt,i)=>'<button onclick="setRockTier('+i+')" style="background:'+(i===state.rockTier?'#3a2010':'transparent')+';border:1px solid #5a3a20;color:#c08040;font-family:Cinzel,serif;font-size:.55rem;padding:2px 6px;margin-left:3px;border-radius:4px;cursor:pointer;">T'+(i+1)+'</button>').join(''):'');
+  document.getElementById('rockBtn').innerHTML=t.icon;
+  document.getElementById('rockHpBar').style.width=(state.rockHp/t.hp*100)+'%';
+  document.getElementById('rockHpText').textContent=fmt(state.rockHp)+' / '+fmt(t.hp);
+  document.getElementById('mineSwings').textContent=fmt(state.mineSwings||0);
+  document.getElementById('rocksBroken').textContent=fmt(state.rocksBroken||0);
+
+  const slots=getRuneSlots();
+  const equipped=state.equippedRunes||[];
+  document.getElementById('runeSlotInfo').textContent=equipped.length+' / '+slots+' equipped';
+  document.getElementById('equippedRunes').innerHTML=equipped.length===0
+    ? '<div style="color:var(--muted);font-size:.65rem;font-style:italic;padding:4px;">No runes equipped. Pick some from your inventory below.</div>'
+    : equipped.map((k,i)=>{const d=RUNE_DEFS[k];return '<div title="'+d.desc+'" onclick="unequipRune('+i+')" style="cursor:pointer;background:#0a0810;border:1px solid '+d.color+';color:'+d.color+';padding:6px 10px;border-radius:8px;font-family:Cinzel,serif;font-size:.65rem;display:flex;align-items:center;gap:6px;"><span>'+d.icon+'</span>'+d.name+'<span style="color:#666;font-size:.55rem;">[unequip]</span></div>';}).join('');
+
+  const inv=state.runeInventory||[];
+  document.getElementById('runeInventory').innerHTML=inv.length===0
+    ? '<div style="grid-column:1/-1;color:var(--muted);font-size:.65rem;font-style:italic;text-align:center;padding:8px;">Break rocks to find runes.</div>'
+    : inv.map((k,i)=>{const d=RUNE_DEFS[k];const bonusTxt=(d.bonus.luck?'+'+d.bonus.luck+'% luck ':'')+(d.bonus.coinMult?'x'+d.bonus.coinMult+' coins ':'')+(d.bonus.pity?'x'+d.bonus.pity+' pity ':'');return '<div style="background:#0a0810;border:1px solid '+d.color+'40;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;font-family:Cinzel,serif;font-size:.7rem;color:'+d.color+';"><span>'+d.icon+'</span>'+d.name+'</div><div style="font-size:.58rem;color:var(--muted);">'+bonusTxt+'</div><div style="display:flex;gap:4px;"><button onclick="equipRune('+i+')" style="flex:1;background:#1a2010;border:1px solid #3a5020;color:#80c080;font-family:Cinzel,serif;font-size:.55rem;padding:4px;border-radius:4px;cursor:pointer;">EQUIP</button><button onclick="sellRune('+i+')" style="background:#201010;border:1px solid #503030;color:#c08080;font-family:Cinzel,serif;font-size:.55rem;padding:4px 6px;border-radius:4px;cursor:pointer;">SELL</button></div></div>';}).join('');
+}
+
+// Hook mining tab button visibility into renderAll
+const _origRenderAll=renderAll;
+window.renderAll=function(){
+  _origRenderAll();
+  const mb=document.getElementById('miningTabBtn');
+  if(mb){
+    const has=!!(state.rebirthShop&&state.rebirthShop.unlockMining);
+    mb.innerHTML=has?'\u26CF\uFE0F Mining':'\uD83D\uDD12 Mining';
+    mb.style.opacity=has?'1':'0.5';
+    mb.style.cursor=has?'pointer':'default';
+  }
+};
 </script>
 </body>
 </html>
